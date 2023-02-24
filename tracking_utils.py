@@ -4,6 +4,33 @@ from typing import List
 import cv2
 import sys
 
+
+def bbox_center (bbox:np.ndarray) -> np.ndarray:
+    '''
+    bbox in format x1y1wh
+    '''
+    return bbox[0:2] + bbox[2:4]/2
+
+
+
+def track_velocities(track_bboxes:List[np.ndarray]) -> Tuple[List[float]]:
+
+    vel_modul = list()
+    vel_phase = list()
+    for ii in range(1, len(track_bboxes)):
+        prev = bbox_center(track_bboxes[ii-1])
+        curr = bbox_center(track_bboxes[ii])
+        disp = curr - prev
+
+        vel_modul.append(np.linalg.norm(disp))
+        vel_phase.append(np.arctan2(disp[1], disp[0]))
+
+    return vel_modul, vel_phase
+            
+
+
+        
+
 # ChatGPT generated code
 def fill_lists(list1, list2):
     i, j = 0, 0
@@ -98,14 +125,42 @@ def get_rectangles_from_frame(df:pd.DataFrame, fr:int)->List[List[int]]:
     return df.loc[df['frame']==fr][['x','y','w','h']].to_numpy().astype(int).tolist()
 
 
-def find_orientations(crops:np.ndarray) -> List[float]:
+def find_orientations(crops:List[np.ndarray]) -> List[float]:
+    '''
+    Find the orientation of each object (binary blob) in a list.
+    Angle is CW/CCW? starting at ???
+    '''
     orientations = list()
     for crop in crops:
         ant_coords = np.transpose(np.nonzero(cv2.bitwise_not(ima)))
         orientations.append(cv2.fitEllipse(ant_coords)[2])
     return orientations
 
+
+def find_orientations_pca(crops:List[np.ndarray]) -> List[float]:
+    '''
+    Find the orientation of each object (binary blob) in a list.
+    Angle is CW/CCW? starting at ???
+    https://alyssaq.github.io/2015/computing-the-axes-or-orientation-of-a-blob/
+    '''
+    orientations = list()
+    for crop in crops:
+        y, x = np.nonzero(crops)
+        x = x - np.mean(x)
+        y = y - np.mean(y)
+        coords = np.vstack([x, y])
+        cov = np.cov(coords)
+        evals, evecs = np.linalg.eig(cov)
+        sort_indices = np.argsort(evals)[::-1]
+        x_v1, y_v1 = evecs[:, sort_indices[0]]  # Eigenvector with largest eigenvalue
+        #x_v2, y_v2 = evecs[:, sort_indices[1]]
         
+        orientations.append(np.arctan2(y_v1, x_v1))
+
+    return orientations
+
+
+
 def process_track(df:pd.DataFrame,input_video:str, start_frame:int = 1, stop_frame:int = -1, out_dir:str = '.'):
 
     capture = cv2.VideoCapture(cv2.samples.findFileOrKeep(input_video))
