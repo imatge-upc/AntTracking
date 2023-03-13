@@ -2,14 +2,13 @@
 Reads a tracking file in the MOTchallenge format, reads the tracked video and plots the rectangles over the corresponding objects, then saves the video.
 
 Usage:
-  plot_rectangles_video.py <trackFile> <inputVideo> <outputVideo>  [--downsampleVideo=<dv>] [--startFrame=<sf>] [--maxFrame=<mf>] [--frameStep=<fs>]
+  plot_rectangles_video.py <trackFile> <inputVideo> <outputVideo>  [--downsampleVideo=<dv>] [--startFrame=<sf>] [--maxFrame=<mf>]
   plot_rectangles_video.py -h | --help
 
 Options:
   --downsampleVideo=<dv>         Downsample the output video by a factor of 2 [default: False]
   --startFrame=<sf>              First frame to process [default: 1]
   --maxFrame=<mf>                Stop processing at this frame [default: -1]
-  --frameStep=<fs>               When using  a sequence of frames, the number of frames to skip [default: 0]
 """
 
 from docopt import docopt
@@ -165,10 +164,9 @@ if __name__ == '__main__':
     downsample_video = bool(strtobool(args['--downsampleVideo']))
     start_frame      = int(args['--startFrame'])
     max_frame        = int(args['--maxFrame'])
-    frame_step       = int(args['--frameStep'])
+
     
-    # A directory with frames extracted from a video can be used instead of a video. In this case, the frames
-    # should be named as 000001.png, 000002.png, etc. and the name will be a template like ./imgs/%06d.jpg
+    #capture = cv.VideoCapture(cv.samples.findFileOrKeep(input_video))
     capture = cv.VideoCapture(input_video)
     if not capture.isOpened():
         print('Unable to open: ' + args.input, file=sys.stderr)
@@ -215,8 +213,7 @@ if __name__ == '__main__':
             out.write(cv.pyrDown(frame))
         else:
             out.write(frame)
-            
-        fr = fr + 1 + frame_step
+        fr = fr + 1
         
     # Release the video capture and writer objects
     capture.release()
