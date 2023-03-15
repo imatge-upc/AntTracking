@@ -28,65 +28,12 @@ def track_velocities(track_bboxes:List[np.ndarray]) -> Tuple[List[float]]:
     return vel_modul, vel_phase
             
 
-
-        
-
-# ChatGPT generated code
-def fill_lists(list1, list2):
-    i, j = 0, 0
-    len1, len2 = len(list1), len(list2)
-    result1, result2 = [], []
-    while i < len1 or j < len2:
-        if i < len1 and j < len2:
-            if list1[i][0] < list2[j][0]:
-                result1.append(list1[i])
-                result2.append([list1[i][0], -1, -1, -1, -1, -1, -1])
-                i += 1
-            elif list1[i][0] > list2[j][0]:
-                result1.append([list2[j][0], -1, -1, -1, -1, -1, -1])
-                result2.append(list2[j])
-                j += 1
-            else:
-                result1.append(list1[i])
-                result2.append(list2[j])
-                i += 1
-                j += 1
-        elif i < len1:
-            result1.append(list1[i])
-            result2.append([list1[i][0], -1, -1, -1, -1, -1, -1])
-            i += 1
-        elif j < len2:
-            result1.append([list2[j][0], -1, -1, -1, -1, -1, -1])
-            result2.append(list2[j])
-            j += 1
-    return result1, result2
-
-
-
-# Aligned data frames
-#def track_alignment (track1:pd.DataFrame, track:pd.DataFrame) -> tuple(pd.DataFrame,pd.DataFrame):
-
-# ChatGPT generated code, corrected by JRMR
-def find_overlap(list1, list2):
-    overlap_indices = []
-    for ii in range(len(list1)):
-        rect1 = list1[ii]
-        rect2 = list2[ii]
-        x1, y1, w1, h1 = rect1[0], rect1[1], rect1[2], rect1[3]
-        x2, y2, w2, h2 = rect2[0], rect2[1], rect2[2], rect2[3]
-
-        if (x1 < x2 + w2) and (x1 + w1 > x2) and (y1 < y2 + h2) and (y1 + h1 > y2):
-            overlap_indices.append(ii)
-
-    return overlap_indices
-
-
-# ------------------------------------------------------------
-
-
 def crop_rectangles (ima:np.ndarray, rectangles:List[int], size:int = -1)->List[np.ndarray]:
     '''
+    Compute the square circumscribing each rectangle and crop it from the image.
+
     rectangles: list of rectangles in x1y1wh format
+    size:       Length of the cropped square. If -1, the length of the largest rectangle side is used
     '''
     kernel3 = np.ones((3,3),np.uint8)
     
@@ -193,3 +140,59 @@ def process_track(df:pd.DataFrame,input_video:str, start_frame:int = 1, stop_fra
         
     # Release the video capture and writer objects
     capture.release()
+
+
+
+        
+
+# ChatGPT generated code
+def fill_lists(list1, list2):
+    i, j = 0, 0
+    len1, len2 = len(list1), len(list2)
+    result1, result2 = [], []
+    while i < len1 or j < len2:
+        if i < len1 and j < len2:
+            if list1[i][0] < list2[j][0]:
+                result1.append(list1[i])
+                result2.append([list1[i][0], -1, -1, -1, -1, -1, -1])
+                i += 1
+            elif list1[i][0] > list2[j][0]:
+                result1.append([list2[j][0], -1, -1, -1, -1, -1, -1])
+                result2.append(list2[j])
+                j += 1
+            else:
+                result1.append(list1[i])
+                result2.append(list2[j])
+                i += 1
+                j += 1
+        elif i < len1:
+            result1.append(list1[i])
+            result2.append([list1[i][0], -1, -1, -1, -1, -1, -1])
+            i += 1
+        elif j < len2:
+            result1.append([list2[j][0], -1, -1, -1, -1, -1, -1])
+            result2.append(list2[j])
+            j += 1
+    return result1, result2
+
+
+
+# Aligned data frames
+#def track_alignment (track1:pd.DataFrame, track:pd.DataFrame) -> tuple(pd.DataFrame,pd.DataFrame):
+
+# ChatGPT generated code, corrected by JRMR
+def find_overlap(list1, list2):
+    overlap_indices = []
+    for ii in range(len(list1)):
+        rect1 = list1[ii]
+        rect2 = list2[ii]
+        x1, y1, w1, h1 = rect1[0], rect1[1], rect1[2], rect1[3]
+        x2, y2, w2, h2 = rect2[0], rect2[1], rect2[2], rect2[3]
+
+        if (x1 < x2 + w2) and (x1 + w1 > x2) and (y1 < y2 + h2) and (y1 + h1 > y2):
+            overlap_indices.append(ii)
+
+    return overlap_indices
+
+
+# ------------------------------------------------------------
