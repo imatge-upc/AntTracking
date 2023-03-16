@@ -26,7 +26,7 @@ class PrecomputedMOTDetector():
         self.current_frame = first_frame
     
     def reset(self):
-        self.current_frame = first_frame
+        self.current_frame = self.first_frame
     
     def __call__(self, frame):
 

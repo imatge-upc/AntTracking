@@ -36,17 +36,15 @@ class MOTGroundTruthAssigner():
             self.previous_assigments = assigments
             return assigments
         
-        # Compute distances
-        bb_trks = tracks[:, 2:6] # M
-        bb_gts = ground_truth[:, 2:6] # N
+        # Compute distances from MOT to bbox
+        bb_trks = tracks[:, 2:6].copy() # M
+        bb_trks[:, 2:] = bb_trks[:, :2] + bb_trks[:, 2:]
+        bb_gts = ground_truth[:, 2:6].copy() # N
+        bb_gts[:, 2:] = bb_gts[:, :2] + bb_gts[:, 2:]
         distance_matrix = self.distance_func(bb_gts, bb_trks) # N, M
 
         # Find index of previous Ids
         _, prev_gt_idx, _ = np.intersect1d(self.previous_assigments[:, 0], ground_truth[:, 1], assume_unique=True, return_indices=True) # Merge sort: O(n*log(n))
-        if len(prev_gt_idx) > 0 and prev_gt_idx.max() >= len(self.previous_assigments):
-            print(ground_truth[:, :2])
-            print(prev_gt_idx)
-            print(self.previous_assigments)
         prev_trk_ids = np.intersect1d(self.previous_assigments[prev_gt_idx, 1], tracks[:, 1], assume_unique=True)
         
         prev_gt_ids = []
@@ -73,7 +71,7 @@ class MOTGroundTruthAssigner():
 
         # Assign the remaining ones with the Hungarian algorithm (keep only the ones that are inside the assigment_th)
         if distance_matrix.size > 0:
-            matched_idxs = linear_assignment(-distance_matrix) # Hungarian algorithm: O(n^3)
+            matched_idxs = linear_assignment(distance_matrix) # Hungarian algorithm: O(n^3)
             matches = [m.reshape(1, 2) for m in matched_idxs if distance_matrix[m[0], m[1]] <= self.assignment_th]
             if len(matches) > 0:
                 matches = np.concatenate(matches, axis=0)

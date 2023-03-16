@@ -17,8 +17,8 @@ DOCTEXT = f"""
 Use background substraction to detect ants in a video
   
 Usage:
-  ant_detection.py <inputVideo> <detectionFile> [--subsAlg=<sa>] [--varThreshold=<vt>] [--filterFG=<ff>] [--writeImages=<wi>] [--outputDir=<od>] [--minSize=<ms>] [--startWriteFrames=<sw>] [--stopFrame=<sf>]
-  ant_detection.py -h | --help
+  ant_detection_pca.py <inputVideo> <detectionFile> [--subsAlg=<sa>] [--varThreshold=<vt>] [--filterFG=<ff>] [--writeImages=<wi>] [--outputDir=<od>] [--minSize=<ms>] [--startWriteFrames=<sw>] [--stopFrame=<sf>]
+  ant_detection_pca.py -h | --help
 
 Options:
   --subsAlg=<sa>            Background substraction algorithm (KNN/MOG2)  [default: {SUBSALG}]
