@@ -36,12 +36,12 @@ class OCSortKalmanEstimator():
 
     @classmethod
     def convert_x_to_bbox(cls, x, score=None): # LTRB
-        score = score or 0.0
+        score = score or np.array([0.0])
 
         w = np.sqrt(x[2] * x[3])
         h = x[2] / w
 
-        return np.array([x[0] - w/2., x[1] - h/2., x[0] + w/2., x[1] + h/2., score], dtype=float).reshape((1, 5))
+        return np.array([ x[0] - w/2., x[1] - h/2., x[0] + w/2., x[1] + h/2., score ], dtype=float).reshape((1, 5))
     
     @classmethod
     def convert_x_to_ccwh(cls, x):
@@ -179,7 +179,7 @@ class OCSortKalmanEstimator():
         self.kf.z = np.array([[None] * self.kf.dim_z]).T
         self.kf.x_post = self.kf.x.copy()
         self.kf.P_post = self.kf.P.copy()
-        self.kf.y = zeros((self.kf.dim_z, 1))
+        self.kf.y = np.zeros((self.kf.dim_z, 1))
 
     def freeze(self):
         self.attr_saved = deepcopy(self.kf.__dict__)

@@ -56,7 +56,7 @@ class Track():
 
 class TrackManager():
 
-    def __init__(self, estiamtor_cls, max_age=1, min_hits=3, max_last_update=1, det_threshold=0.6):
+    def __init__(self, estiamtor_cls, max_age=1, min_hits=3, max_last_update=1, det_threshold=0.6, output_estimations=True):
 
         self.estiamtor_cls = estiamtor_cls
 
@@ -67,6 +67,8 @@ class TrackManager():
 
         self.trackers = []
         self.frame_count = 0
+
+        self.output_estimations = output_estimations
     
     def reset(self):
         self.trackers = []
@@ -89,8 +91,11 @@ class TrackManager():
             trk = self.trackers[int(i_trck)]
             det = detections[int(i_det)]
 
-            pred_out = trk.update(det) # Unfreeze if Freezed
-            pred_out = det
+            pred_out = trk.update(det) # Unfreeze if Freezed, pred_out = next estimation
+            if self.output_estimations:
+                pred_out = estimations[int(i_trck)]
+            else:
+                pred_out = det
 
             # Prepare output from active tracks
             if (trk.time_since_update < self.max_last_update) and ((trk.hit_streak >= self.min_hits) or (self.frame_count <= self.min_hits)):
@@ -108,8 +113,7 @@ class TrackManager():
 
             else:
                 # Update must be done too but pred_out can be prediction or previous
-                pred_out = trk.update(None) # Freeze
-                #pred_out = pred
+                pred_out = trk.update(None) # Freeze, pred_out = previous estimation (== pred)
 
                 if (trk.time_since_update < self.max_last_update) and ((trk.hit_streak >= self.min_hits) or (self.frame_count <= self.min_hits)):
                     output.append(np.concatenate((pred_out[..., :4].reshape(-1), [trk.id])).reshape(1, -1))
