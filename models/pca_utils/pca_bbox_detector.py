@@ -6,7 +6,7 @@ import numpy as np
 class PcaBBoxDetector():
 
     def crop_pca_orientation(self, frame, bbox, background_th):
-        crop = frame[bbox[0] : bbox[0] + bbox[2], bbox[1] : bbox[1] + bbox[3]]
+        crop = frame[bbox[1] : bbox[1] + bbox[3], bbox[0] : bbox[0] + bbox[2]]
         pts = np.argwhere(crop < background_th).reshape(-1, 2).astype(np.float32)
         if len(pts) < self.min_size : return 0
 
@@ -28,7 +28,7 @@ class PcaBBoxDetector():
         if bboxes is None : return None
         
         gray_frame = len(bboxes) == 0 or cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        background_th = self.background_th or len(bboxes) == 0 or np.mean(gray_frame)
+        background_th = self.background_th or len(bboxes) == 0 or np.mean(gray_frame) * 0.5
 
         angles = np.asarray([self.crop_pca_orientation(gray_frame, bbox, background_th) for bbox in bboxes]).reshape(-1, 1)
 
