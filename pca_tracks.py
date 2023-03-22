@@ -29,7 +29,7 @@ def VideoCapture(input_video):
 
 
 def crop_pca_orientation(frame, bbox, background_th, min_size=20):
-    crop = frame[bbox[0] : bbox[0] + bbox[2], bbox[1] : bbox[1] + bbox[3]]
+    crop = frame[bbox[1] : bbox[1] + bbox[3], bbox[0] : bbox[0] + bbox[2]]
     pts = np.argwhere(crop < background_th).reshape(-1, 2).astype(np.float32)
     if len(pts) < min_size : return 0
 
@@ -63,7 +63,7 @@ class PrecomputedMOTTrackerPCA():
         self.current_frame += 1
         
         gray_frame = len(tcks) == 0 or cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        background_th = len(tcks) == 0 or np.mean(gray_frame)
+        background_th = len(tcks) == 0 or np.mean(gray_frame) * 0.5
 
         angles = np.asarray([crop_pca_orientation(gray_frame, tck[2:6].astype(int), background_th) for tck in tcks])
         if len(tcks) > 0:
@@ -87,7 +87,6 @@ if __name__ == '__main__':
     print(f'Processing {detection_file}')
 
     # Apply the model
-    fr = 0
     with VideoCapture(input_video) as capture:
         # As we do not want to load the video, this trick is enough
         results = []
