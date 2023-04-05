@@ -81,7 +81,6 @@ if __name__ == '__main__':
 
     ocsort_model = Sort(detector, associator, track_manager)
 
-    seq = os.path.basename(detection_file)
     print(f'Processing {detection_file}')
 
     # As we do not want to load the video, this trick is enough
