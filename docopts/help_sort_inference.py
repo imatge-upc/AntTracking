@@ -12,11 +12,10 @@ DOCTEXT = f"""
 SORT demo
   
 Usage:
-  sort_inference.py [--seq_path=<sp>] [--max_age=<ma>] [--min_hits=<mh>] [--iou_threshold=<it>]
+  sort_inference.py <seq_path> [--max_age=<ma>] [--min_hits=<mh>] [--iou_threshold=<it>]
   sort_inference.py -h | --help
 
 Options:
-  --seq_path=<sp>           Path to detections. [default: {SEQ_PATH}]
   --max_age=<ma>            Maximum number of frames to keep alive a track without associated detections. [default: {MAX_AGE}]
   --min_hits=<mh>           Minimum number of associated detections before track is initialised. [default: {MIN_HITS}]
   --iou_threshold=<it>      Minimum IOU for match. [default: {IOU_THRESHOLD}]
@@ -26,7 +25,7 @@ Options:
 def parse_args(argv):
     args = docopt(DOCTEXT, argv=argv[1:], help=True, version=None, options_first=False)
 
-    seq_path = args['--seq_path']
+    seq_path = args['<seq_path>']
     max_age = int(args['--max_age'])
     min_hits = int(args['--min_hits'])
     iou_threshold = float(args['--iou_threshold'])

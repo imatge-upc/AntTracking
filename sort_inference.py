@@ -49,7 +49,7 @@ if __name__ == '__main__':
         os.makedirs('OUTPUT')
     
     detector = PrecomputedMOTDetector(seq_path)
-    track_manager = TrackManager(ReducedBBoxKalmanEstimator, max_age, min_hits)
+    track_manager = TrackManager(ReducedBBoxKalmanEstimator, None, max_age, min_hits)
     associator = IoUAssociator(iou_threshold)
 
     sort_model = Sort(detector, associator, track_manager)

@@ -52,13 +52,15 @@ class IoUAssociator():
     def __init__(self, iou_threshold=0.3):
         self.iou_threshold = iou_threshold
 
-    def associate(self, frame, detections, estimations):
+    def associate(self, frame, detections, tracks):
         # frame is not used but other associators may need it
         # estimations is a list of M predictions np.array([x1, y1, x2, y2, score]).reshape((1, 5))
         # detections is a np.array([[x1, y1, x2, y2, score], ...]).reshape(N, 5)
 
-        if len(estimations) == 0 or len(detections) == 0:
+        if len(tracks) == 0 or len(detections) == 0:
             return np.empty((0, 2), dtype=int)
+
+        estimations = [trk[-1] for trk in tracks]
 
         trackers = np.vstack(estimations) # np.array([[x1, y1, x2, y2, score], ...]).reshape(M, 5)
         estimation_index = np.arange(len(trackers)).reshape(-1, 1)

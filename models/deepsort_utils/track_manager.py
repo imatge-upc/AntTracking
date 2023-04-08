@@ -44,6 +44,7 @@ class Track():
         return np.concatenate((prediction, *self.apparence_memory, np.full((1, 1), self.age)), axis=1) # 1, 5+4x4+Nx50+1
     
     def update(self, observation):
+        output = self.estimator.update(observation)
         if observation is not None:
             self.history = []
             self.time_since_update = 0
@@ -54,7 +55,7 @@ class Track():
             self.apparence_memory.append(observation[5:].reshape(1, -1))
             self.apparence_memory = self.apparence_memory[-self.memory_size:]
 
-            return self.estimator.update(observation)
+            return output
         return self.history[-1]
     
     __call__ = predict

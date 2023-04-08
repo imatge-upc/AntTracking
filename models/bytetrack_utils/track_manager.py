@@ -42,16 +42,13 @@ class Track():
         return prediction
     
     def update(self, observation):
-        output = self.estimator.update(observation)
-        if observation is not None:
-            self.history = []
-            self.time_since_update = 0
+        self.history = []
+        self.time_since_update = 0
 
-            self.hits += 1
-            self.hit_streak += 1
+        self.hits += 1
+        self.hit_streak += 1
 
-            return output
-        return self.history[-1]
+        return self.estimator.update(observation)
     
     def __getitem__(self, key):
         return self.history[key]
@@ -59,15 +56,16 @@ class Track():
     def __call__(self, query):
         raise NotImplementedError()
 
-
 class TrackManager():
 
-    def __init__(self, estiamtor_cls, apparence_scorer_cls=None, max_age=1, min_hits=3, max_last_update=1, det_threshold=0.6, return_pred=True):
+    def __init__(self, estiamtor_cls, apparence_scorer_cls=None, max_age=1, min_hits=3, max_last_update=1, det_threshold=0.6, return_pred=False):
 
         self.estiamtor_cls = estiamtor_cls
         self.apparence_scorer_cls = apparence_scorer_cls
         if apparence_scorer_cls is None:
             self.apparence_scorer_cls = lambda det : None
+
+        self.return_pred = return_pred
 
         self.max_age = max_age
         self.min_hits = min_hits
@@ -76,8 +74,6 @@ class TrackManager():
 
         self.trackers = []
         self.frame_count = 0
-
-        self.return_pred = return_pred
     
     def reset(self):
         self.trackers = []
@@ -88,7 +84,7 @@ class TrackManager():
         if predict:
             track.predict()
         return track
-    
+
     def chk_output(self, trk):
         last_update_criteria = trk.time_since_update < self.max_last_update
         hit_streak_criteria = trk.hit_streak >= self.min_hits
@@ -99,14 +95,10 @@ class TrackManager():
     def manage_tracks(self, detections, matches):
         # tracks are on self.trackers, the estiamtion is self.trackers[int(i_trck)][-1]
         # detections is a np.array([[x1, y1, x2, y2, score], ...]).reshape(N, 5)
-
-        # NOTE: Old version: estimations is a list of M predictions np.array([x1, y1, x2, y2, score, v_x, v_y, *bbox_last[:5], *bbox_kth[:5]]).reshape((1, 17))
-
         self.frame_count += 1
 
         unmatched_detections = np.setdiff1d(np.arange(len(detections)), matches[:, 0], assume_unique=True)
         unmatched_estimations = np.setdiff1d(np.arange(len(self.trackers)), matches[:, 1], assume_unique=True)
-        #print(f', {len(unmatched_estimations)}, {len(unmatched_detections)}', end='\t')
 
         output = []
         for i_det, i_trck in matches:
@@ -114,8 +106,7 @@ class TrackManager():
             det = detections[int(i_det)]
 
             pred_out = trk[-1] if self.return_pred else det
-
-            trk.update(det) # Unfreeze if Freezed, output = next estimation
+            trk.update(det)
 
             # Prepare output from active tracks
             if self.chk_output(trk):
@@ -127,13 +118,12 @@ class TrackManager():
             trk = self.trackers[int(i_trck)]
             pred = trk[-1]
 
-            if np.any( ~(np.isfinite(pred)) ) or (trk.time_since_update > self.max_age):
-                # remove invalid trackers, if I had a list of to remove index, np.delete(arr, index_list_to_del) could be used outside a for
+            if np.any(~(np.isfinite(pred))) or trk.time_since_update > self.max_age:
+                # remove invalid trackers
                 self.trackers.pop(i_trck)
 
             else:
-                # Update must be done too but pred_out can be prediction or previous
-                pred_out = trk.update(None) # Freeze, pred_out = previous estimation (== pred)
+                pred_out = pred
 
                 if self.chk_output(trk):
                     output.append(np.concatenate((pred_out[..., :4].reshape(-1), [trk.id])).reshape(1, -1))
@@ -148,8 +138,6 @@ class TrackManager():
 
                 if self.chk_output(trk):
                     output.append(np.concatenate((det[:4], [trk.id])).reshape(1, -1))
-
-        #print(f'{len(self.trackers)}, {len(output)}')
 
         if len(output) > 0:
             return np.concatenate(output)
