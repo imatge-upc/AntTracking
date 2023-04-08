@@ -58,12 +58,17 @@ class Track():
 
 class TrackManager():
 
-    def __init__(self, estiamtor_cls, apparence_scorer_cls=None, max_age=1, min_hits=3, max_last_update=1, return_pred=False):
+    def __init__(self, estiamtor_cls, apparence_scorer_cls=None, track_cls=None, max_age=1, min_hits=3, max_last_update=1, return_pred=False):
 
         self.estiamtor_cls = estiamtor_cls
+        
         self.apparence_scorer_cls = apparence_scorer_cls
         if apparence_scorer_cls is None:
             self.apparence_scorer_cls = lambda det : None
+
+        self.track_cls = track_cls
+        if track_cls is None:
+            self.track_cls = Track
 
         self.return_pred = return_pred
 
@@ -131,7 +136,7 @@ class TrackManager():
         for i_det in unmatched_detections:
             det = detections[int(i_det)]
 
-            trk = Track(self.estiamtor_cls(det), self.apparence_scorer_cls(det))
+            trk = self.track_cls(self.estiamtor_cls(det), self.apparence_scorer_cls(det))
             self.trackers.append(trk)
 
             if self.chk_output(trk):
