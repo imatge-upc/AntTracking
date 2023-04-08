@@ -77,7 +77,7 @@ if __name__ == '__main__':
         use_byte=use_byte
     )
     estiamtor_cls = lambda bbox : OCSortKalmanEstimator(bbox, delta_t=3)
-    track_manager = TrackManager(estiamtor_cls, max_age=30, min_hits=min_hits, max_last_update=1, det_threshold=track_thresh)
+    track_manager = TrackManager(estiamtor_cls, None, max_age=30, min_hits=min_hits, max_last_update=1, det_threshold=track_thresh)
 
     ocsort_model = Sort(detector, associator, track_manager)
 

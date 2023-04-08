@@ -31,15 +31,17 @@ class ByteAssociator():
 
         self.second_asso_func = second_asso_func or iou_batch
 
-    def associate(self, frame, detections, estimations):
+    def associate(self, frame, detections, tracks):
         # frame is not used but other associators may need it
         # estimations is a list of M predictions np.array([x1, y1, x2, y2, score, v_x, v_y, *bbox_last[:5], *bbox_kth[:5]]).reshape((1, 17))
         # detections is a np.array([[x1, y1, x2, y2, score], ...]).reshape(N, 5)
 
         # START OF PREPARATION
-        if len(estimations) == 0 or len(detections) == 0:
+        if len(tracks) == 0 or len(detections) == 0:
             #print(f'0, N, N\t0', end='')
             return np.empty((0, 2), dtype=int)
+        
+        estimations = [trk[-1] for trk in tracks]
 
         base_trackers = np.vstack(estimations) # np.array([[x1, y1, x2, y2, score, v_x, v_y, *bbox_last[:5], *bbox_kth[:5]], ...]).reshape(M, 17)
         estimation_index = np.arange(len(base_trackers)).reshape(-1, 1)

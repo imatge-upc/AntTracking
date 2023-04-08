@@ -21,7 +21,7 @@ class ReducedBBoxKalmanEstimator():
 
     @classmethod
     def convert_x_to_bbox(cls, x, score=None):
-        score = score or 0.0
+        score = score or np.array([0.0])
 
         w = np.sqrt(x[2] * x[3])
         h = x[2] / w
