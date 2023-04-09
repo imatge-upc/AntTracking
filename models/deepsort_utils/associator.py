@@ -48,12 +48,6 @@ def squared_mahalanobis_dist(dets, pred, covariance):
     squared_maha = np.sum(z * z, axis=0)
     return squared_maha.reshape(-1) # N
 
-def cosine_distance(a, b, data_is_normalized=False):
-    if not data_is_normalized:
-        a = np.asarray(a) / np.linalg.norm(a, axis=1, keepdims=True)
-        b = np.asarray(b) / np.linalg.norm(b, axis=1, keepdims=True)
-    return 1.0 - np.dot(a, b.T)
-
 def iou_batch(bb_test, bb_gt):
     """
     From SORT: Computes IOU between two bboxes in the form [x1,y1,x2,y2]
@@ -102,26 +96,28 @@ class DeepSortAssociator():
         self.th_appa = th_appa
         self.iou_threshold = iou_threshold
     
-    def associate(self, frame, detections, estimations):
+    def associate(self, frame, detections, tracks):
         # detections: M
         # estimations: N
 
-        if len(estimations) == 0 or len(detections) == 0:
+        if len(tracks) == 0 or len(detections) == 0:
             #print(f'0, N, N\t0', end='')
             return np.empty((0, 2), dtype=int)
         
-        covariances = [pred[0, 5:21].reshape(4, 4) for pred in estimations]
+        estimations = np.vstack([trk[-1] for trk in tracks])
+
         det_bboxes = detections[:, :5]
         det_apparences = detections[:, 5:] # M, num_feats
-        pred_bboxes = np.asarray([pred[0, :5].reshape(-1, 5) for pred in estimations])
-        pred_apparences = [pred[0, 21:-1].reshape(-1, self.num_feats) for pred in estimations] # list of N elems memory, num_feats
-        pred_ages = np.asarray([estimation[0, -1] for estimation in estimations])
 
-        mahalanobis = np.stack([squared_mahalanobis_dist(det_bboxes, pred, covariance) for pred, covariance in zip(estimations, covariances)], axis=0) # N, M
-        nearest_cosine = np.stack([cosine_distance(app_memory, det_apparences).min(axis=0) for app_memory in pred_apparences], axis=0) # N, M
+        pred_bboxes = estimations[:, :5]
+        covariances = estimations[:, 5:21].reshape(-1, 4, 4)
+        pred_ages = estimations[:, -1]
+
+        mahalanobis = np.stack([squared_mahalanobis_dist(det_bboxes, pred, covariance) for pred, covariance in zip(pred_bboxes, covariances)], axis=0) # N, M
+        apparence_score = np.stack([trk(det_apparences) for trk in tracks], axis=0) # N, M
         
-        gate = (mahalanobis < self.th_maha) & (nearest_cosine < self.th_appa) # N, M
-        cost = self.average_factor * mahalanobis + (1 - self.average_factor) * nearest_cosine # N, M
+        gate = (mahalanobis < self.th_maha) & (apparence_score < self.th_appa) # N, M
+        cost = self.average_factor * mahalanobis + (1 - self.average_factor) * apparence_score # N, M
         cost[gate] = self.gate_value
 
         young_indexs = [np.argwhere(pred_ages == i) for i in np.sort(np.unique(pred_ages))]
@@ -138,7 +134,7 @@ class DeepSortAssociator():
                 aged_cost = cost[idxs[0], unmatched_idxs].reshape((len(idxs[0]), len(unmatched_idxs)))
                 new_matches = linear_assignment(aged_cost)
 
-                new_matches = [m.reshape(1, 2) for m in new_matches if gate[m[0], m[1]]]
+                new_matches = [m.reshape(1, 2) for m in new_matches if not gate[m[0], m[1]]]
                 if len(new_matches) > 0:
                     new_matches = np.vstack(new_matches)
                 else:
