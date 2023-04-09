@@ -8,6 +8,7 @@ from docopts.help_deepsort_track import parse_args
 from models.sort import Sort
 from models.deepsort_utils.associator import DeepSortAssociator
 from models.deepsort_utils.deepsort_kalman_estimator import DeepSORTBBoxKalmanEstimator
+from models.deepsort_utils.nn_apparence_scorer import NNApparenceScorer
 from models.deepsort_utils.track_manager import TrackManager
 
 
@@ -24,10 +25,9 @@ class PrecomputedMOTDetector():
         self.last_frame = int(self.seq_dets[:, 0].max())
         self.current_frame = first_frame
 
-        mask = np.full((self.seq_dets.shape[1]), True)
-        mask[:2] = False
-        mask[7:10] = False
-        self.seq_dets = self.seq_dets[:, mask]
+        self.mask = np.full((self.seq_dets.shape[1]), True)
+        self.mask[:2] = False
+        self.mask[7:10] = False
 
         self.verbose = verbose
     
@@ -40,6 +40,7 @@ class PrecomputedMOTDetector():
             print (f'Processing frame {frame - 1}', file=sys.stderr)
 
         dets = self.seq_dets[self.seq_dets[:, 0] == self.current_frame, :]
+        dets = dets[:, self.mask]
         dets[:, 2:4] += dets[:, 0:2] #convert to [x1,y1,w,h] to [x1,y1,x2,y2]
 
         self.current_frame += 1
@@ -58,7 +59,8 @@ if __name__ == '__main__':
         os.makedirs('OUTPUT')
     
     detector = PrecomputedMOTDetector(detection_file, verbose=True)
-    track_manager = TrackManager(DeepSORTBBoxKalmanEstimator, max_age, min_hits)
+    apparence_scorer_cls = lambda det : NNApparenceScorer(det, 100)
+    track_manager = TrackManager(DeepSORTBBoxKalmanEstimator, apparence_scorer_cls, None, max_age, min_hits)
     associator = DeepSortAssociator(num_feats=50, average_factor=0, gate_value=1e+5, th_maha=None, th_appa=1, iou_threshold=iou_threshold)
 
     model = Sort(detector, associator, track_manager)
