@@ -116,7 +116,7 @@ class DeepSortAssociator():
         mahalanobis = np.stack([squared_mahalanobis_dist(det_bboxes, pred, covariance) for pred, covariance in zip(pred_bboxes, covariances)], axis=0) # N, M
         apparence_score = np.stack([trk(det_apparences) for trk in tracks], axis=0) # N, M
         
-        gate = (mahalanobis < self.th_maha) & (apparence_score < self.th_appa) # N, M
+        gate = (mahalanobis > self.th_maha) & (apparence_score > self.th_appa) # N, M
         cost = self.average_factor * mahalanobis + (1 - self.average_factor) * apparence_score # N, M
         cost[gate] = self.gate_value
 

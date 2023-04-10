@@ -20,15 +20,15 @@ Tots els programes (scripts) tenen una interficie docopt amb l'ajuda activada.
 
 Aplica un model de detecció basat en extracció del fons (background), estimat de manera dinamica, i, posteriorment, detecció de components conexes.
 
-A partir d'aquestes deteccions i un valor umbral basat en el nivell de gris mitja de la imatge, es segmenta la formiga per cada detecció, es calcula el PCA i s'afageix l'angle respecte a l'horitzontal les coaracteristiques de la detecció.
+A partir d'aquestes deteccions i un valor umbral basat en el nivell de gris mitja de la imatge, es segmenta la formiga per cada detecció, es calcula el PCA i s'afageix l'angle respecte a l'horitzontal les caracteristiques de la detecció.
 
-python3 ant_detection_pca.py ./DATA/output_4_gt.mp4 ./OUTPUT/output_4_2_pca.txt --varThreshold=20 --startWriteFrames=500
+    python3 ant_detection_pca.py ./DATA/output_4_gt.mp4 ./OUTPUT/output_4_2_pca.txt --varThreshold=20 --startWriteFrames=500
 
 # ant_detection.py
 
 Aplica un model de detecció basat en extracció del fons (background), estimat de manera dinamica, i, posteriorment, detecció de components conexes.
 
-python3 ant_detection.py ./DATA/output_4_gt.mp4 ./OUTPUT/output_4_2.txt --varThreshold=20 --startWriteFrames=500
+    python3 ant_detection.py ./DATA/output_4_gt.mp4 ./OUTPUT/output_4_2.txt --varThreshold=20 --startWriteFrames=500
 
 # associated_histograms notebooks
 
@@ -50,22 +50,79 @@ Els resultats d'aquest notebook peremten estudiar graficament l'error en fase i 
 
 # deepsort_detection.py
 
+Aplica un model de detecció basat en extracció del fons (background), estimat de manera dinamica, i, posteriorment, detecció de components conexes.
+
+A partir de les deteccions, s'extrau retalls de les imatges d'un maxim de 224x224 px, en cas de retalls més petits, s'aplica padding amb el color mig de la imatge sencera (en aquest problema en particular, el color mig aproxima prou bé el fons).
+
+Aquests retalls son processats per una xarxa neuronal de la qual s'extrau una capa intermitja (la ultima abans de la classificació) a mode de vector de caracteristiques d'aparença.
+
+El resultat es un arxiu MOT Challenge de deteccions (10 elements per fila) ampliat amb les caracteristiques de cada detecció (N=50 elements adicionals per fila)
+
+    python3 deepsort_detection.py ./DATA/output_4_gt.mp4 ./OUTPUT/output_4_2_apparence.txt --varThreshold=20 --startWriteFrames=500
+
 # deepsort_track.py
+
+Aplica el model de tracking definit en [DeepSORT](https://arxiv.org/pdf/1703.07402.pdf). Requereix un arxiu amb les deteccions i els descriptors d'aparença en format MOT Challenge ampliat (resultat de deepsort_detection.py).
+
+    python3 deepsort_track.py OUTPUT/output_4_apparence.txt deepsort_tracking_output_4.txt --iouThreshold=0.1
 
 # hota_idf1.ipynb
 
+Notebook on s'aplica la biblioteca [evaldet](https://github.com/tadejsv/EvalDeT) per calcular les metriques habituals en problemes de tracking (CLEARMOT, IDs i HOTA).
+
+Els resultats del notebook permeten observar els valors numerics en forma tabular. També permet observar graficament la evolució de les components del HOTA en funció del parametre $\alpha$.
+
 # minimum_id.py
+
+Script per modificar els IDs discontinuus dels tracks detectats en IDs continuus desde 1 fins al nombre de tracks.
+
+    python3 minimum_id.py DATA/output_4_gt.txt DATA/output_4_gt_min.txt
 
 # ocsort_track.py
 
+Aplica el model de tracking definit en [OCSort](https://arxiv.org/pdf/2203.14360.pdf). Requereix un arxiu amb les deteccions en format MOT Challenge (resultat de ant_detection.py).
+
+    python3 ocsort_track.py DATA/detections.txt test.txt --iouThreshold=0.1 --associationFunc=ciou
+
 # pca_tracks.py
+
+A partir d'un arxiu de tracking en format MOTChallenge i un valor umbral basat en el nivell de gris mitja de la imatge, es segmenta la formiga per cada detecció, es calcula el PCA i s'afageix l'angle respecte a l'horitzontal les caracteristiques de la linea del arxiu.
+
+    python3 pca_tracks.py DATA/output_4_gt.mp4 OUTPUT/ocsort_tracking_output_4.txt output_4_dets_pca.txt
 
 # plot_pca_directions.ipynb
 
+Notebook per comprobar el correcte funcionament del sistema amb PCA. Es pot observar graficament la segmentació de les formigues i els vectors de desplaçament que s'aplicarien usant Kalman o PCA.
+
+Nomes s'observa un frame a la vegada i el numero de frames a avançar l'escull l'usuari al moment (cap numero o Esc avança 1 frame, un nombre negatiu o caracter no numeric finalitça el bloc).
+
 # plot_rectangles_video.py
+
+No he mirat el funcionament del codi, permet generar videos amb els tracks dibuixats en diferents colors.
+
+    python3 plot_rectangles_video.py DATA/output_4_gt.txt DATA/output_4_gt.mp4 output_4_gt_rectangles.mp4 --downsampleVideo=True
 
 # pred_to_cvat.py
 
+A partir d'un arxiu de tracking en format MOTChallenge amb IDs minimes (resultat de minimum_id.py) genera un ZIP i un JSON.
+
+EL JSON conté el text necessari per definir les etiquetes d'una tasca de CVAT, s'aplicarà copiant i enganxant el contingut.
+
+El ZIP conté una carpeta amb un arxiu de text amb tracks en format MOT1.1 i un altre arxiu de text amb nomes per cada etiqueta. Aquest ZIP es pot usar per carregar els resultats del model a la tasca de CVAT configurada amb el JSON anterior.
+
+    python3 pred_to_cvat.py DATA/output_4_gt_min.txt gt.zip
+
 # sort_inference.py
 
+Aplica el model de tracking definit en [SORT](https://arxiv.org/pdf/1602.00763.pdf). Requereix un arxiu amb les deteccions en format MOT Challenge (resultat de ant_detection.py).
+
+    python3 sort_inference.py DATA/detections.txt
+
 # unassociated_histograms.ipynb
+
+Aquest notebook serveix per observar i comparar les distribuicions de 2 arxius de tracking, considerant una el _ground truth_.
+
+Els resultats son histogrames de:
+* velocitat (desplaçament en pixels / frame), 
+* IoU entre dos frmaes consecutius d'un mateix track (per tots els tracks).
+* cIoU entre dos frmaes consecutius d'un mateix track (per tots els tracks).
