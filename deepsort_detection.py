@@ -6,7 +6,7 @@ from torchvision.models import vit_b_32 as VisionTransformer
 
 from docopts.help_deepsort_detection import parse_args
 from models.deepsort_utils.feature_extractor import FeatureExtractor
-from models.deepsort_utils.apparence_bbox_detector import ApparenceBBoxDetector
+from models.apparence_bbox_detector import ApparenceBBoxDetector
 from models.foreground_mask_object_detector import ForegroundMaskObjectDetector
 
 
