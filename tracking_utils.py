@@ -28,7 +28,7 @@ def track_velocities(track_bboxes:List[np.ndarray]) -> Tuple[List[float]]:
     return vel_modul, vel_phase
             
 
-def crop_rectangles (ima:np.ndarray, rectangles:List[int], size:int = -1)->List[np.ndarray]:
+def crop_rectangles (ima:np.ndarray, rectangles:List[np.ndarray], size:int = -1)->List[np.ndarray]:
     '''
     Compute the square circumscribing each rectangle and crop it from the image.
 
