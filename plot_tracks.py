@@ -37,6 +37,7 @@ import pandas as pd
 import numpy as np
 from operator import itemgetter
 from itertools import groupby
+from itertools import chain
 import cv2
 import trackeval
 from scipy.optimize import linear_sum_assignment
@@ -46,24 +47,47 @@ import os
 import glob
 from docopt import docopt
 from distutils.util import strtobool
+#from PIL import Image
 
-def match_gt_pred_tracks (raw_data, cls):
+from track_reid import track_segments
+
+
+def match_gt_pred_tracks (raw_data, cls, dataset):
     '''
     Match the predicted and GT tracks using the same method as in TrackEval's HOTA metric. 
     The dataset (GT and tracking files) structure should mimic the one used in MOT20 mot_challenge_2d_box
     Parameters:
        raw_data: data structure, read using trackeval.datasets.MotChallenge2DBox().get_raw_seq_data()
        cls: The class of the objects. 
+       dataset: a dataset object 
+    Return:
+       final_associations : Associations between gt and tracker ids
+       ids_equiv : Equivalences between the track ids on the original files and the 0-based ones 
     '''
     # Code adapted from https://github.com/JonathonLuiten/TrackEval (retrieved April, 24th)
     
     # In raw_data, tracks and timestamps are 1-based. In data, they are zero-based
     data = dataset.get_preprocessed_seq_data(raw_data, cls)
 
+
+    # Equivelence between track ids in raw_data (original ids in text files)
+    # and in data (consecutive ids, starting at zero)
+    ids_equiv = dict()
+    ids_equiv["tracker"] = np.zeros((data['num_tracker_ids']), dtype=int)
+
+    for ii, (ori_ids, ids) in enumerate(zip(raw_data['tracker_ids'], data['tracker_ids'])):
+        for jj in range(len(ori_ids)):
+            ids_equiv["tracker"][ids[jj]] = ori_ids[jj]
+
+    ids_equiv["gt"] = np.zeros((data['num_gt_ids']), dtype=int)
+    for ii, (ori_ids,ids) in enumerate(zip(raw_data['gt_ids'], data['gt_ids'])):
+        for jj in range(len(ori_ids)):
+            ids_equiv["gt"][ids[jj]] = ori_ids[jj]
+            
     array_labels = np.arange(0.05, 0.99, 0.05)
 
     potential_matches_count = np.zeros((data['num_gt_ids'], data['num_tracker_ids']))
-    gt_id_count = np.zeros((data['num_gt_ids'], 1))
+    gt_id_count      = np.zeros((data['num_gt_ids'], 1))
     tracker_id_count = np.zeros((1, data['num_tracker_ids']))
 
 
@@ -105,62 +129,99 @@ def match_gt_pred_tracks (raw_data, cls):
         for ii in range(0,len(match_track_ids)):
             final_associations[t,match_track_ids[ii]] = match_gt_ids[ii]
 
-    return final_associations
-        
+    return final_associations, ids_equiv
 
 
-def vertical_axis (ima, num_tracks, vertical_spacing, top_margin):
-    font = cv2.FONT_HERSHEY_SIMPLEX
 
-    cv2.line(ima, (60,0), (60,ima.shape[0]-1), (0,0,0), thickness=2)
+
+from PIL import Image,ImageDraw,ImageFont
+def vertical_axis (ima:np.ndarray, num_tracks:int, ids_equiv:np.ndarray, vertical_spacing:int, top_margin:int):
+
+    imaP = Image.fromarray(ima)
+    imaD = ImageDraw.Draw(imaP)
+
+    font1 = ImageFont.truetype('Ubuntu-R.ttf', 35)
+    font2 = ImageFont.truetype('Ubuntu-R.ttf', 20)
+    
+    shape = [(60,0), (60,ima.shape[0]-1)]
+    
+    imaD.line(shape, fill ="black", width = 2)
+    
+
+    #font = cv2.FONT_HERSHEY_SIMPLEX
+    #cv2.line(ima, (60,0), (60,ima.shape[0]-1), (0,0,0), thickness=2)
 
     for ii in range(num_tracks + 1):
         pos = top_margin + ii*vertical_spacing
         if ii % 5 == 0:
-            cv2.line(ima,(50,pos),(70,pos), (0,0,0), thickness=3) # Ticks
-            cv2.putText(ima, f'{ii}', (5,pos+10), font, 1, (0, 0, 0), 1, cv2.LINE_AA)
-        else:
-            cv2.line(ima,(55,pos),(65,pos), (0,0,0), thickness=2) # Ticks
             
-    return ima
+            imaD.line([(50,pos),(70,pos)], fill ="black", width = 3)
+            imaD.text((5,pos-20),f'{ii}', fill='black', font=font1)
+            #cv2.line(ima,(50,pos),(70,pos), (0,0,0), thickness=3) # Ticks
+            #cv2.putText(ima, f'{ii}', (5,pos+10), font, 1, (0, 0, 0), 1, cv2.LINE_AA)
+        else:
+            imaD.line([(55,pos),(65,pos)], fill ="black", width = 2)
+            #cv2.line(ima,(55,pos),(65,pos), (0,0,0), thickness=2) # Ticks
+
+        # Write real ids
+        if ii < ids_equiv.shape[0]:
+            rid = ids_equiv[ii]
+            imaD.text((70,pos-10),f'{rid}', fill='black', font=font2)
+            
+    
+    return np.asarray(imaP)
 
 
 def horizontal_axis(ima, num_frames, pixels_per_frame, left_margin):
-    font = cv2.FONT_HERSHEY_SIMPLEX
+    imaP = Image.fromarray(ima)
+    imaD = ImageDraw.Draw(imaP)
+
+    font1 = ImageFont.truetype('Ubuntu-R.ttf', 25)
+    imaD.line([(0,50), (ima.shape[1]-1,50)], fill ="black", width = 2)
+    
+    #font = cv2.FONT_HERSHEY_SIMPLEX
 
     last_tick = ((num_frames//10)+1)*10
     
-    cv2.line(ima, (0,50), (ima.shape[1]-1,50), (0,0,0), thickness=2)
+    #cv2.line(ima, (0,50), (ima.shape[1]-1,50), (0,0,0), thickness=2)
     for ii in range(0,last_tick,10):
         pos = left_margin + int(np.round(ii*pixels_per_frame))
+
         if ii % 100 == 0:
-            cv2.line(ima,(pos,40),(pos,60), (0,0,0), thickness=3) # Ticks
-            cv2.putText(ima, f'{ii}', (pos-10,35), font, 1, (0, 0, 0), 1, cv2.LINE_AA)
+            imaD.line([(pos,40),(pos,60)], fill ="black", width = 3)
+            if ii == 0:
+                pos = pos + 15
+            imaD.text((pos-20, 20),f'{ii}', fill='black', font=font1)
+            #cv2.line(ima,(pos,40),(pos,60), (0,0,0), thickness=3) # Ticks
+            #cv2.putText(ima, f'{ii}', (pos-10,35), font, 1, (0, 0, 0), 1, cv2.LINE_AA)
         else:
-            cv2.line(ima,(pos,45),(pos,55), (0,0,0), thickness=2) # Ticks
-    return ima
+            imaD.line([(pos,45),(pos,55)], fill ="black", width = 2)
+            #cv2.line(ima,(pos,45),(pos,55), (0,0,0), thickness=2) # Ticks
+
+    return np.asarray(imaP)
 
 
 def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np.ndarray, ima_size=(3440,1440), one_file=False):
 
     # list of unique GT track ids
-    tids = list(set(df_gt['trackId']))
-    largest_gt_track_id   = max(tids)
+    tids = sorted(list(set(df_gt['trackId'])))
 
+    largest_gt_track_id   = len(tids) # max(tids)    
+    
     if one_file:
         ptids = list()
         largest_pred_track_id = 0
     else:
         # list of unique pred track ids
-        ptids = list(set(df_track['trackId']))
-        largest_pred_track_id = max(ptids)
+        ptids = sorted(list(set(df_track['trackId'])))
+        largest_pred_track_id = len(ptids) # max(ptids)
 
-    max_tracks = max(largest_pred_track_id,largest_gt_track_id)
-    if max_tracks > 65:
+    max_tracks = largest_pred_track_id # max(largest_pred_track_id,largest_gt_track_id)
+    if max_tracks > 64:
         colours = list_96_colors
-    elif max_track > 32:
+    elif max_tracks > 32:
         colours = list_64_colors
-    elif max_track > 16:
+    elif max_tracks > 16:
         colours = list_32_colors
     else:
         colours = list_16_colors
@@ -169,7 +230,7 @@ def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np
     tot_frames = sorted(list(set(df_gt['frameId'])))
     num_frames = tot_frames[-1] - tot_frames[0] + 1
 
-    left_margin   = 90 # Left margin width in pixels. Can contain white space, vertical axis and vertical label
+    left_margin   = 100 # Left margin width in pixels. Can contain white space, vertical axis and vertical label
     right_margin  = 20 # Right margin width in pixels. Contains white space
     top_margin    = 80 # Top margin in pixels
     bottom_margin = 0 # Bottom margin in pixels. Contains horizontal axis, horizontal label and white space
@@ -188,14 +249,14 @@ def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np
     out_ima = np.ones((ima_size[1],ima_size[0],3), dtype=np.uint8)* 255
 
     # Plot vertical axis (track ids)
-    out_ima = vertical_axis (out_ima, max(largest_gt_track_id, largest_pred_track_id), vertical_spacing, top_margin)
+    out_ima = vertical_axis (out_ima, max(largest_gt_track_id, largest_pred_track_id), ids_equiv['gt'], vertical_spacing, top_margin)
     # Plot horizontal axis (frame #)
     out_ima = horizontal_axis(out_ima, num_frames, pixels_per_frame, left_margin)
 
-    # For each track ...
-    for ii,track in enumerate(tids):
+    # For each GT track ...
+    for ii in range(len(tids)):
         # Create the list of frames for this track id
-        frames = sorted(list(df_gt.loc[df_gt.loc[:,'trackId']==track]['frameId']))
+        frames = sorted(list(df_gt.loc[df_gt.loc[:,'trackId'] == ids_equiv['gt'][ii]]['frameId']))
 
         # split the list of frames into smaller lists based on the frames missing in the sequence
         # https://stackoverflow.com/questions/3149440/splitting-list-based-on-missing-numbers-in-a-sequence
@@ -207,9 +268,11 @@ def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np
         for seg in segments:
             seg_coord = list()
             for jj, fr in enumerate(seg):  # Here, fr is 1-based
+                # Convert the consecutive trackid to coordinates
+                y_coord = top_margin + ii*vertical_spacing
                 # Convert the frame_numbers to coordinates
-                y_coord = top_margin + track*vertical_spacing
                 x_coord = left_margin + int(np.round((fr-tot_frames[0]) * pixels_per_frame))
+
                 seg_coord.append((x_coord,y_coord))
 
                 if jj != 0:
@@ -218,40 +281,38 @@ def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np
                     cv2.line(out_ima, (x1, y1), (x2, y2), color, thickness=line_thickness)
                     
             segs_coord.append(seg_coord)
-        '''    
-        if track not in tracks_dict:
-            tracks_dict[track] = list()
-        tracks_dict[track] = segs_coord
-        '''
 
     if one_file:
         return out_ima
     
-    unassociated_tracks = list() # List of predicted tracks not associated with any GT
+    associated_tracks = list() # List of predicted tracks associated with any GT
 
     # Plot the predicted tracks that are associated with a GT track. Mark the unassociated ones for later.
-    for ii,track in enumerate(ptids):
+    for ii in range(len(ptids)):
+        
         # Create the list of frames for this track id
-        frames = sorted(list(df_track.loc[df_track.loc[:,'trackId']==track]['frameId']))
+        frames = sorted(list(df_track.loc[df_track.loc[:,'trackId'] == ids_equiv['tracker'][ii]]['frameId']))
 
         # Split the list of frames into smaller lists based on the frames missing in the sequence
         # https://stackoverflow.com/questions/3149440/splitting-list-based-on-missing-numbers-in-a-sequence
         segments = [list(map(itemgetter(1), g)) for k, g in groupby(enumerate(frames), lambda x: x[0]-x[1])]
 
         # Select a color from the list ands convert from #xxxxxx hexadecimal representation to RGB tuple
-        color = tuple(int(colours[track%len(colours)].lstrip('#')[i:i+2], 16) for i in (0, 2, 4)) 
+        color = tuple(int(colours[ii%len(colours)].lstrip('#')[i:i+2], 16) for i in (0, 2, 4)) 
 
         segs_coord = list()
-        for seg in segments:
+        for kk, seg in enumerate(segments):
             seg_coord = list()
-            for jj, fr in enumerate(seg):
-                # Convert the frame_numbers to coordinates. Note that in 'final_associations', both frame numbers and track numbers are zero-based,
-                # but 'fr' and 'track' are 1-based. This is why we need fr-1 and track-1.
-                if final_associations[fr-1,track-1] == -1:
-                    unassociated_tracks.append(track)
-                    break
 
-                y_coord = top_margin + (final_associations[fr-1,track-1]+1)*vertical_spacing + gt_pred_sep + line_thickness
+            assoc_id = -1
+            for jj, fr in enumerate(seg):
+                if final_associations[fr-tot_frames[0],ii] == -1:
+                    continue
+
+                # Keep count of the tracks that have been associated
+                associated_tracks.append(ii)
+                
+                y_coord = top_margin + final_associations[fr-tot_frames[0],ii]*vertical_spacing + gt_pred_sep + line_thickness
                 x_coord = left_margin + int(np.round((fr-tot_frames[0]) * pixels_per_frame))
 
                 seg_coord.append((x_coord,y_coord))
@@ -263,26 +324,25 @@ def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np
                     
             segs_coord.append(seg_coord)
 
-    unassociated_tracks = list(set(unassociated_tracks))
+    associated_tracks   = list(set(associated_tracks))
+    unassociated_tracks = [x for x in range(len(ptids)) if x not in associated_tracks] 
     
     # Plot the unassociated tracks.
-    for ii,track in enumerate(unassociated_tracks):
+    for ii,tr in enumerate(unassociated_tracks):
         # Create the list of frames for this track id
-        frames = sorted(list(df_track.loc[df_track.loc[:,'trackId']==track]['frameId']))
+        frames = sorted(list(df_track.loc[df_track.loc[:,'trackId']==ids_equiv['tracker'][tr]]['frameId']))
 
         # Split the list of frames into smaller lists based on the frames missing in the sequence
         # https://stackoverflow.com/questions/3149440/splitting-list-based-on-missing-numbers-in-a-sequence
         segments = [list(map(itemgetter(1), g)) for k, g in groupby(enumerate(frames), lambda x: x[0]-x[1])]
         
         # Select a color from the list ands convert from #xxxxxx hexadecimal representation to RGB tuple
-        color = tuple(int(colours[track%len(colours)].lstrip('#')[i:i+2], 16) for i in (0, 2, 4)) 
+        color = tuple(int(colours[ii%len(colours)].lstrip('#')[i:i+2], 16) for i in (0, 2, 4)) 
 
         segs_coord = list()
         for seg in segments:
             seg_coord = list()
             for jj, fr in enumerate(seg):
-                # Convert the frame_numbers to coordinates. Note that in final_associations, both frame numbers and track numbers are zero-based,
-                # but 'fr' and 'track' are 1-based. This is why we need fr-1 and track-1.
                 y_coord = top_margin + (largest_gt_track_id+1+ii)*vertical_spacing + gt_pred_sep + line_thickness
                 x_coord = left_margin + int(np.round((fr-tot_frames[0]) * pixels_per_frame))
                 seg_coord.append((x_coord,y_coord))
@@ -296,6 +356,80 @@ def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np
             
     return out_ima
 
+
+
+def print_tracker_info(df, df_track, final_associations, ids_equiv):
+
+    gt_segments      = track_segments(df)
+    tracker_segments = track_segments(df_track)
+
+    print ('Segments for the GT ids')
+    for key,val in gt_segments.items():
+        print (f'GT id {key} segments: {val}')
+    print ('-----------------------------------------------------------------\n')
+        
+    print ('Segments for the tracker ids')
+    for key,val in tracker_segments.items():
+        print (f'Tracker id {key} segments: {val}')
+    print ('-----------------------------------------------------------------\n')
+            
+    # Tracker IDs that do not have association with any GT id:
+    unassociated_tracker_ids = list()
+    for ii in range(final_associations.shape[1]):
+        if np.all(final_associations[:,ii] == final_associations[0,ii]):
+            unassociated_tracker_ids.append(ii)
+    unassociated_tracker_ids = np.array(unassociated_tracker_ids, dtype=int)
+    print ('Tracker ids not associated with any GT ids:')
+    print (ids_equiv['tracker'][unassociated_tracker_ids].tolist())
+    print ('-----------------------------------------------------------------\n')
+    
+            
+    # List of associations between tracker and GT
+    print ('GT ids associated with each tracker id: ')
+    assoc = dict()
+    for ii in range(final_associations.shape[1]):
+        ll = list(set(final_associations[:,ii][final_associations[:,ii] != -1].tolist()))
+        if ll != []:
+            assoc[ii] = np.array(ll, dtype=int)
+            print (f'Tracker id: {ids_equiv["tracker"][ii]}, Associated GT ids: {ids_equiv["gt"][assoc[ii]].tolist()}')
+    print ('-----------------------------------------------------------------\n')
+
+    # List of associations between GT and tracker ids:
+    gt_assoc = dict()
+    for ii in range(final_associations.shape[0]): # Frame numbers
+        for jj in range(final_associations.shape[1]): # track ids
+            gtid = final_associations[ii,jj]
+            if gtid == -1:
+                continue
+            gtid = ids_equiv["gt"][gtid]    # original gt id
+            trid = ids_equiv["tracker"][jj] # original tracker id
+            if gtid not in gt_assoc:
+                gt_assoc[gtid] = [trid]
+            else:
+                gt_assoc[gtid].append(trid)
+
+    print ('Tracker Ids associated with each GT ids:')
+    for key,val in gt_assoc.items():
+        print (f'GT id: {key}, Associated tracker ids: {list(set(val))}')
+    print ('-----------------------------------------------------------------\n')
+
+    # GT ids not associated with any tracker id:
+    tot_assoc = list()
+    for ii in range(final_associations.shape[1]):
+        tot_assoc.append(assoc[ii].tolist())
+    tot_assoc = list(chain.from_iterable(tot_assoc)) # Collapse list levels
+            
+    associated_gt_ids = list(set(tot_assoc))
+    unassociated_gt_ids = [x for x in range(ids_equiv['gt'].shape[0]) if x not in associated_gt_ids]
+    print ('GT ids not associated with any tracker ids:')
+    if unassociated_gt_ids == []:
+        print ([])
+    else:
+        unassociated_gt_ids = np.array(unassociated_gt_ids, dtype=int)
+        print (ids_equiv["gt"][unassociated_gt_ids].tolist())
+    print ('-----------------------------------------------------------------\n')
+
+    
 
 if __name__ == '__main__':
     # read arguments    
@@ -325,8 +459,6 @@ if __name__ == '__main__':
         gtfiles_dir = os.path.join(gt_folder, f'{dataset_config["BENCHMARK"]}-train')
         
         track_files = glob.glob(f'{trfiles_dir}/*.txt')
-        print (trfiles_dir)
-        print (track_files)
         
         for tfn in track_files:
             print (tfn)
@@ -335,17 +467,27 @@ if __name__ == '__main__':
             print (pred_name)
             
             gt_name   = os.path.join(gtfiles_dir, pred_name, 'gt/gt.txt')
-            
-            raw_data  = dataset.get_raw_seq_data(tracker_name, pred_name)
-            final_associations = match_gt_pred_tracks(raw_data, cls)
 
+            # Read GT and tracker files. Note: check whether it is possible to skip this and use the information directly from final_associations and ids_equiv.
             df       = pd.read_csv(gt_name, header=0, names=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'a','b','c'])
             df_track = pd.read_csv(tfn, header=0, names=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'conf', 'a','b','c'])
+
+            raw_data  = dataset.get_raw_seq_data(tracker_name, pred_name)
+            final_associations, ids_equiv = match_gt_pred_tracks(raw_data, cls, dataset)
+
+
+            gt_segments      = track_segments(df)
+            tracker_segments = track_segments(df_track)
+
+
+            print_tracker_info(df, df_track, final_associations, ids_equiv)
 
             
             out_ima  = plot_tracks(df,df_track, final_associations, one_file=one_file)
 
+            out_ima = cv2.cvtColor(out_ima, cv2.COLOR_RGB2BGR)
+            
             out_name = f'{tracker_name}-{pred_name}.png'
-            print (out_name)
+            print (f'Saving image to {out_name}')
             cv2.imwrite(out_name,out_ima)
 
