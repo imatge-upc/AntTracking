@@ -19,12 +19,14 @@ class ApparenceBBoxDetector():
         
         return img
     
-    def __init__(self, bbox_detector, apparence_model, height=224, width=224):
+    def __init__(self, bbox_detector, apparence_model, height=224, width=224, skip=0):
         self.bbox_detector = bbox_detector
         self.apparence_model = apparence_model
 
         self.height = height
         self.width = width
+
+        self.skip = skip
     
     def apply(self, frame):
         
@@ -32,7 +34,7 @@ class ApparenceBBoxDetector():
         if bboxes is None or len(bboxes) == 0 : return None
 
         background_color = np.mean(frame, (0, 1))
-        inputs = torch.Tensor(np.stack([self.crop_pad(frame, bbox, background_color) for bbox in bboxes], axis=0))
+        inputs = torch.Tensor(np.stack([self.crop_pad(frame, bbox[self.skip:], background_color) for bbox in bboxes], axis=0))
         outputs = self.apparence_model(inputs) # Consider [#bbox, #features] shape
 
         a_bboxes = [(*bbox, *desc) for bbox, desc in zip(bboxes, outputs)]

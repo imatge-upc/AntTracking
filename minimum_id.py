@@ -28,17 +28,21 @@ class PrecomputedMOTTracker():
 
 DOCTEXT = f"""
 Usage:
-  minimum_id.py <seq_path> <output_file>
-"""
+  minimum_id.py <seq_path> <output_file> [--first_frame=<fr>]
 
+Options:
+  --first_frame=<fr>    Frame number of the track file that correspond of the first frame of the annotation clip [default: 1].
+"""
 
 if __name__ == '__main__':
 
     args = docopt(DOCTEXT, argv=sys.argv[1:], help=True, version=None, options_first=False)
     seq_path = args['<seq_path>']
     output_file = args['<output_file>']
+    first_frame = int(args['--first_frame'])
+    #first_frame = 16628
 
-    tracker = PrecomputedMOTTracker(seq_path)
+    tracker = PrecomputedMOTTracker(seq_path, first_frame=first_frame)
 
     id_transform = dict()
 
@@ -50,7 +54,8 @@ if __name__ == '__main__':
         for trk in tracks:
             if trk[1] not in id_transform.keys():
                 id_transform[trk[1]] = len(id_transform) + 1
-            results.append(f"{int(trk[0])},{id_transform[trk[1]]},{trk[2]:.2f},{trk[3]:.2f},{trk[4]:.2f},{trk[5]:.2f},{trk[6]:.1f},{int(trk[7])},{int(trk[8])},{int(trk[9])}\n")
+            results.append(f"{int(frame)},{id_transform[trk[1]]},{trk[2]:.2f},{trk[3]:.2f},{trk[4]:.2f},{trk[5]:.2f},{trk[6]:.1f},{int(trk[7])},{int(trk[8])},{int(trk[9])}\n")
+            #results.append(f"{int(trk[0])},{id_transform[trk[1]]},{trk[2]:.2f},{trk[3]:.2f},{trk[4]:.2f},{trk[5]:.2f},{trk[6]:.1f},{int(trk[7])},{int(trk[8])},{int(trk[9])}\n")
     
     with open(output_file, 'w') as f:
         f.writelines(results)
