@@ -30,6 +30,12 @@ Aplica un model de detecció basat en extracció del fons (background), estimat 
 
     python3 ant_detection.py ./DATA/output_4_gt.mp4 ./OUTPUT/output_4_2.txt --varThreshold=20 --startWriteFrames=500
 
+# apparence_tracks.py
+
+Aplica un model d'aparença a qualsevol arxiu en format MOT Challenge. Posteriorment es pot usar per descriure el track sencer i fusionar tracks amb reID.
+
+    python3 ./DATA/output_4_gt.mp4 ./OUTPUT/ocsort_tracking_output_4_kalman.txt ocsort_tracking_output_4_kalman_apparence.txt
+
 # associated_histograms notebooks
 
 En aquest grup de notebooks, s'aplica l'algoritme d'assignació de tracks estimats amb els tracks reals (ground truth) definit per [MOTChallenge](https://arxiv.org/pdf/1603.00831.pdf).

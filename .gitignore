@@ -1,5 +1,10 @@
 DATA/*.mp4
+DATA/*.avi
 OUTPUT/VIDEOS/
+*.zip
+runs/
+bus.jpg
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
