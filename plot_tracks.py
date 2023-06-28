@@ -200,6 +200,27 @@ def horizontal_axis(ima, num_frames, pixels_per_frame, left_margin):
 
     return np.asarray(imaP)
 
+def legend_image (colours, ids_equiv):
+    # Create an empty image to show the correspondence between colors and track ids
+    legend_image = np.ones((ids_equiv['tracker'].shape[0]*12+10,150,3),dtype=np.uint8) * 255
+
+    imaP = Image.fromarray(legend_image)
+    imaD = ImageDraw.Draw(imaP)
+
+    font1 = ImageFont.truetype('Ubuntu-R.ttf', 11)
+    
+    for ii in range(ids_equiv['tracker'].shape[0]):
+        # Select a color from the list ands convert from #xxxxxx hexadecimal representation to RGB tuple
+        color = tuple(int(colours[ii%len(colours)].lstrip('#')[i:i+2], 16) for i in (0, 2, 4)) 
+        
+        y_coord_legend = 5+ii*12
+
+        imaD.line([(45, y_coord_legend), (legend_image.shape[1]-6, y_coord_legend)], fill = colours[ii%len(colours)], width = 2)    
+        imaD.text((5, y_coord_legend-5),f'{ids_equiv["tracker"][ii]}', fill='black', font=font1)
+        
+
+    return np.asarray(imaP)
+
 
 def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np.ndarray, ima_size=(3440,1440), one_file=False):
 
@@ -317,7 +338,8 @@ def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np
 
                 seg_coord.append((x_coord,y_coord))
 
-                if jj != 0:
+                # if jj != 0: # JRMR 31/05/2023 Fails in some situations because there is only one element in seg_coord
+                if len(seg_coord) > 1:
                     x1,y1 = seg_coord[-2]
                     x2,y2 = seg_coord[-1] 
                     cv2.line(out_ima, (x1, y1), (x2, y2), color, thickness=line_thickness)
@@ -354,7 +376,7 @@ def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np
                     
             segs_coord.append(seg_coord)
             
-    return out_ima
+    return out_ima, legend_image(colours,ids_equiv)
 
 
 
@@ -483,9 +505,10 @@ if __name__ == '__main__':
             print_tracker_info(df, df_track, final_associations, ids_equiv)
 
             
-            out_ima  = plot_tracks(df,df_track, final_associations, one_file=one_file)
+            out_ima,legend_ima  = plot_tracks(df,df_track, final_associations, one_file=one_file)
 
             out_ima = cv2.cvtColor(out_ima, cv2.COLOR_RGB2BGR)
+            legend_ima = cv2.cvtColor(legend_ima, cv2.COLOR_RGB2BGR)
             
             out_name = f'{tracker_name}-{pred_name}.png'
             print (f'Saving image to {out_name}')
