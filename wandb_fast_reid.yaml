@@ -20,7 +20,7 @@ metric:
   goal: maximize
 
 parameters:
-  config-file:
+  config_file:
     value: ./fastreid_configs/Market1501/bagtricks_R50.yml
 
   OUTPUT_DIR:
