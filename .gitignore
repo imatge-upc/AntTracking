@@ -9,6 +9,13 @@ DATA/datasets/
 bus.jpg
 OUTPUT/output_4_gt_fastreid.txt
 OUTPUT/split_output_4_gt_fastreid.txt
+nohup.out
+nohup*.out
+nohup*
+wandb/
+YOLOv8/
+.nfs*
+yolov8n.pt
 
 
 # Byte-compiled / optimized / DLL files
