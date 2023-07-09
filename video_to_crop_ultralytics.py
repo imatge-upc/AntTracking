@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
                 tracks_save, seen = adjust_annotations(tracks, seen, initial, final, crop_width, crop_height)
 
-                filename = f'{basename}_{fr:06}_{idx}_{len(tracks_save)}.jpg'
+                filename = f'{basename}_{fr:06}_{idx}_{len(tracks_save)}.png'
                 labels_filename = f'{basename}_{fr:06}_{idx}_{len(tracks_save)}.txt'
                 idx += 1
 

@@ -101,7 +101,7 @@ if __name__ == "__main__":
                 print (f'Frame {fr} is None')
                 break
             
-            filename = f'{basename}_{fr:06}_{len(tracks)}.jpg'
+            filename = f'{basename}_{fr:06}_{len(tracks)}.png'
             labels_filename = f'{basename}_{fr:06}_{len(tracks)}.txt'
 
             mot2yolo = lambda trk : ['0', f'{(trk[2] + (trk[4] / 2)) / width}', f'{(trk[3] + (trk[5] / 2)) / height}', f'{trk[4] / width}', f'{trk[5] / height}']

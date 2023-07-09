@@ -30,13 +30,13 @@ def VideoCapture(input_video):
 
 if __name__ == '__main__':
     # read arguments
-    input_video, detection_file, weights_path, imgsz, stop_frame = parse_args(sys.argv)
+    input_video, detection_file, weights_path, imgsz, stop_frame, conf = parse_args(sys.argv)
 
     # Ensamble the Detector
     detection_model = AutoDetectionModel.from_pretrained(
         model_type='yolov8',
         model_path=weights_path,
-        confidence_threshold=0.3,
+        confidence_threshold=conf,
         device="cpu", # or 'cuda:0'
     )
 
@@ -81,8 +81,8 @@ if __name__ == '__main__':
             
             if len(bboxes) > 0:
                 # bbox = (x1, y1, w, h)
-                MOTDet_line = lambda fr, bbox : f'{fr}, -1, {bbox[0]}, {bbox[1]}, {bbox[2]}, {bbox[3]}, {bbox[4]}, -1, -1, -1'
-                detection_text = '\n'.join([MOTDet_line(fr, bbox) for bbox in bboxes])
+                MOTDet_line = lambda fr, bbox : f'{fr}, -1, {bbox[0]}, {bbox[1]}, {bbox[2]}, {bbox[3]}, {bbox[4]}, -1, -1, -1\n'
+                detection_text = ''.join([MOTDet_line(fr, bbox) for bbox in bboxes])
                 results.append(detection_text)
     
     with open(detection_file, 'w') as f:

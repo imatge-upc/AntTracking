@@ -150,20 +150,23 @@ class OCSortAssociator():
     def associate_high(self, high_detections, trackers, velocities, previous_obs):
         high_iou_matrix = iou_batch(high_detections, trackers)
 
-        pos_associations_matrix = (high_iou_matrix >= self.iou_threshold).astype(np.int32)
-        if pos_associations_matrix.sum(1).max() == 1 and pos_associations_matrix.sum(0).max() == 1:
-            # If only 1 candidate of detection-track pair at most (and at least 1 pair)
-            matched_indices = np.stack(np.where(pos_associations_matrix), axis=1)
-            
-        else:
-            angle_diff_score = angle_score_batch(high_detections, velocities, previous_obs, self.inertia_weight)
+        try:
+            pos_associations_matrix = (high_iou_matrix >= self.iou_threshold).astype(np.int32)
+            if pos_associations_matrix.sum(1).max() == 1 and pos_associations_matrix.sum(0).max() == 1:
+                # If only 1 candidate of detection-track pair at most (and at least 1 pair)
+                matched_indices = np.stack(np.where(pos_associations_matrix), axis=1)
+                
+            else:
+                angle_diff_score = angle_score_batch(high_detections, velocities, previous_obs, self.inertia_weight)
 
-            # Independently of the thereshold, minimum cost criterion, filtered later
-            cost = -(high_iou_matrix + angle_diff_score)
-            matched_indices = linear_assignment(cost)
-        
-        #filter out linear assignments matched with low IOU
-        high_matches = [m.reshape(1, 2) for m in matched_indices if high_iou_matrix[m[0], m[1]] >= self.iou_threshold]
+                # Independently of the thereshold, minimum cost criterion, filtered later
+                cost = -(high_iou_matrix + angle_diff_score)
+                matched_indices = linear_assignment(cost)
+            
+            #filter out linear assignments matched with low IOU
+            high_matches = [m.reshape(1, 2) for m in matched_indices if high_iou_matrix[m[0], m[1]] >= self.iou_threshold]
+        except:
+            high_matches = []
 
         if(len(high_matches) == 0):
             high_matches = np.empty((0, 2), dtype=int)

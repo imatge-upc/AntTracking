@@ -1,0 +1,191 @@
+
+command:
+  - "srun"
+  - "-c"
+  - "8"
+  - "--gres=gpu:4"
+  - "--mem"
+  - "32G"
+  - "--time=10:00:00"
+  - ${env}
+  - python
+  - ${program}
+  - ${args}
+
+program: wandb_fast_reid.py
+
+method: bayes
+metric:
+  name: mINP
+  goal: maximize
+
+parameters:
+  config-file:
+    value: ./configs/Market1501/bagtricks_R50.yml
+
+  OUTPUT_DIR:
+    value: runs/apparence/train
+  
+  num-gpus:
+    value: 4
+
+  INPUT.SIZE_TRAIN:
+    value: "(64, 64)"
+  INPUT.SIZE_TEST:
+    value: "(64, 64)"
+  
+
+
+  INPUT.AFFINE.ENABLED:
+    value: False
+
+  INPUT.AUGMIX.ENABLED:
+    value: False
+  INPUT.AUGMIX.PROB:
+    value: 0.0
+
+  INPUT.AUTOAUG.ENABLED:
+    value: False
+  INPUT.AUTOAUG.PROB:
+    value: 0.0
+
+  INPUT.CJ.ENABLED:
+    value: False
+  INPUT.CJ.BRIGHTNESS:
+    value: 0.0
+  INPUT.CJ.CONTRAST:
+    value: 0.0
+  INPUT.CJ.HUE:
+    value: 0.0
+  INPUT.CJ.PROB:
+    value: 0.0
+  INPUT.CJ.SATURATION:
+    value: 0.0
+
+  INPUT.CROP.ENABLED:
+    value: False
+  INPUT.CROP.RATIO:
+    value: "(0., 1.)"
+  INPUT.CROP.SCALE:
+    value: "(0., 1)"
+  INPUT.CROP.SIZE:
+    value: "(64, 64)"
+
+  INPUT.FLIP.ENABLED:
+    value: True
+  INPUT.FLIP.PROB:
+    value: 0.5
+
+  INPUT.PADDING.ENABLED:
+    value: True
+  INPUT.PADDING.MODE:
+    value: "constant"
+  INPUT.PADDING.SIZE:
+    value: 10
+
+  INPUT.REA.ENABLED:
+    value: True
+  INPUT.REA.PROB:
+    value: 0.5
+  INPUT.REA.VALUE:
+    value: "(123.675, 116.28, 103.53)"
+
+  INPUT.RPT.ENABLED:
+    value: False
+  INPUT.RPT.PROB:
+    value: 0.0
+
+  MODEL.LOSSES.CE.ALPHA:
+    value: 0.2
+  MODEL.LOSSES.CE.EPSILON:
+    value: 0.1
+  MODEL.LOSSES.CE.SCALE:
+    value: 1.0
+
+  MODEL.LOSSES.TRI.HARD_MINING:
+    value: True
+  MODEL.LOSSES.TRI.MARGIN:
+    value: 0.3
+  MODEL.LOSSES.TRI.NORM_FEAT:
+    value: False
+  MODEL.LOSSES.TRI.SCALE:
+    value: 1.0
+
+  MODEL.PIXEL_MEAN:
+    value: "(123.675, 116.28, 103.53)"
+  MODEL.PIXEL_STD:
+    value: "(58.395, 57.12, 57.375)"
+
+  MODEL.QUEUE_SIZE:
+    value: 8192
+
+  SOLVER.AMP.ENABLED:
+    value: True
+
+  SOLVER.BASE_LR:
+    distribution: uniform
+    max: 0.01
+    min: 0.0001
+  SOLVER.BIAS_LR_FACTOR:
+    value: 1.0
+
+  SOLVER.CLIP_GRADIENTS.ENABLED:
+    value: False
+  SOLVER.CLIP_GRADIENTS.CLIP_TYPE:
+    value: "norm"
+  SOLVER.CLIP_GRADIENTS.CLIP_VALUE:
+    value: 5.0
+  SOLVER.CLIP_GRADIENTS.NORM_TYPE:
+    value: 2.0
+
+  SOLVER.DELAY_EPOCHS:
+    value: 0
+
+  SOLVER.FREEZE_ITERS:
+    value: 0
+
+  SOLVER.GAMMA:
+    value: 0.1
+
+  SOLVER.HEADS_LR_FACTOR:
+    value: 1.0
+
+  SOLVER.IMS_PER_BATCH:
+    value: 64
+
+  SOLVER.MOMENTUM:
+    value: 0.9
+
+  SOLVER.NESTEROV:
+    value: False
+
+  SOLVER.OPT:
+    value: "Adam"
+
+  SOLVER.SCHED:
+    value: "MultiStepLR"
+  SOLVER.STEPS:
+    value: "(40, 90)"
+
+  SOLVER.WARMUP_FACTOR:
+    value: 0.1
+  SOLVER.WARMUP_ITERS:
+    value: 2000
+  SOLVER.WARMUP_METHOD:
+    value: "linear"
+
+  SOLVER.WEIGHT_DECAY:
+    value: 0.0005
+  SOLVER.WEIGHT_DECAY_BIAS:
+    value: 0.0005
+  SOLVER.WEIGHT_DECAY_NORM:
+    value: 0.0005
+  
+  TEST.FLIP.ENABLED:
+    value: False
+  
+  TEST.ROC.ENABLED:
+    value: False
+
+  TEST.IMS_PER_BATCH:
+    value: 128
