@@ -10,12 +10,12 @@ class ApparenceBBoxDetector():
 
         img = np.full((self.height, self.width, len(background_color)), background_color).reshape(len(background_color), self.height, self.width)
         
-        h = min(bbox[3], self.height)
-        w = min(bbox[2], self.width)
+        h = int(min(bbox[3], self.height))
+        w = int(min(bbox[2], self.width))
 
-        start_h = self.height // 2 - h // 2
-        start_w = self.width // 2 - w // 2
-        img[:, start_h : start_h + h, start_w : start_w + w] = frame[bbox[1] : bbox[1] + h, bbox[0] : bbox[0] + w, :].reshape(len(background_color), h, w)
+        start_h = int(self.height // 2 - h // 2)
+        start_w = int(self.width // 2 - w // 2)
+        img[:, start_h : start_h + h, start_w : start_w + w] = frame[int(bbox[1]) : int(bbox[1]) + h, int(bbox[0]) : int(bbox[0]) + w, :].reshape(len(background_color), h, w)
         
         return img
     
@@ -31,7 +31,7 @@ class ApparenceBBoxDetector():
     def apply(self, frame):
         
         bboxes = self.bbox_detector(frame) # list of (x, y, w, h)
-        if bboxes is None or len(bboxes) == 0 : return None
+        if bboxes is None or len(bboxes) == 0 : return [] # Previously None
 
         background_color = np.mean(frame, (0, 1))
         inputs = torch.Tensor(np.stack([self.crop_pad(frame, bbox[self.skip:], background_color) for bbox in bboxes], axis=0))

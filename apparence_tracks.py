@@ -5,9 +5,11 @@ import numpy as np
 import os
 import sys
 import time
+import torch
 from torchvision.models import vit_b_32 as VisionTransformer
 
 from docopts.help_apparence_tracks import parse_args
+from models.deepsort_utils.fastreid_adaptor import FastReID
 from models.deepsort_utils.feature_extractor import FeatureExtractor
 from models.apparence_bbox_detector import ApparenceBBoxDetector
 
@@ -40,15 +42,20 @@ class PrecomputedMOTTracker():
 
         self.first_frame = first_frame
         self.current_frame = first_frame
+        self.seen_frames = 0
 
         self.verbose = verbose
     
     def reset(self):
         self.current_frame = self.first_frame
     
+    def set_current_frame(self, current_frame):
+        self.current_frame = current_frame
+    
     def __call__(self, frame):
 
-        if self.verbose and (self.current_frame % 500 == 0):
+        self.seen_frames += 1
+        if self.verbose and (self.seen_frames % 250 == 0):
             print (f'Processing frame {self.current_frame}', file=sys.stderr)
 
         tcks = self.seq_dets[self.seq_dets[:, 0] == self.current_frame, :]
@@ -59,7 +66,7 @@ class PrecomputedMOTTracker():
 
 if __name__ == '__main__':
 
-    input_video, detection_file, tracking_file = parse_args(sys.argv)
+    input_video, detection_file, tracking_file, config_file, weights_path = parse_args(sys.argv)
 
     total_time = 0.0
     total_frames = 0
@@ -69,19 +76,28 @@ if __name__ == '__main__':
     
     detector_model = PrecomputedMOTTracker(detection_file, verbose=True)
 
-    apparence_model = FeatureExtractor(VisionTransformer(weights='DEFAULT'), ['encoder']) # Output list of 1 Tensor [#bboxes, 50, 768]
-    apparence_model.eval()
-    apparence_model_applier = lambda x : apparence_model(x)[0].mean(2).numpy(force=True) # Output [#bboxes, 50]
+    #apparence_model = FeatureExtractor(VisionTransformer(weights='DEFAULT'), ['encoder']) # Output list of 1 Tensor [#bboxes, 50, 768]
+    #apparence_model.eval()
+    #apparence_model_applier = lambda x : apparence_model(x)[0].mean(2).numpy(force=True) # Output [#bboxes, 50]
+    apparence_model = FastReID(config_file, weights_path)
+    def apparence_model_applier(x):
+        with torch.no_grad():
+            out = apparence_model(x)
+            out = torch.nn.functional.normalize(out, dim=-1).numpy(force=True)
+        
+        return out
 
-    model = ApparenceBBoxDetector(detector_model, apparence_model_applier, skip=2)
+    model = ApparenceBBoxDetector(detector_model, apparence_model_applier, skip=2, height=128, width=64)
 
     print(f'Processing {detection_file}')
 
     # Apply the model
     with VideoCapture(input_video) as capture:
-        # As we do not want to load the video, this trick is enough
         results = []
-        for frame_id in range(1, detector_model.last_frame + 1):
+        # We shold be able to skip loading empty frames
+        for frame_id in np.sort(np.unique(detector_model.seq_dets[:, 0])):
+            capture.set(cv.CAP_PROP_POS_FRAMES, frame_id - 1)
+            detector_model.set_current_frame(frame_id)
             total_frames += 1
 
             _, frame = capture.read()
@@ -96,7 +112,7 @@ if __name__ == '__main__':
             total_time += cycle_time
 
             for t in online_targets:
-                results.append(f"{t[0]}, {t[1]}, {', '.join([str(b) for b in t[2:]])[:-2]}\n")
+                results.append(f"{t[0]}, {t[1]}, {', '.join([str(b) for b in t[2:]])}\n")
 
     with open(os.path.join('OUTPUT', tracking_file), 'w') as f:
         f.writelines(results)

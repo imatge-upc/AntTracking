@@ -54,18 +54,6 @@ També s'espera que els tracks continguin les prediccions del filtre de Kalman i
 
 Els resultats d'aquest notebook peremten estudiar graficament l'error en fase i  intersection over union (IoU) entre les associacions i comparar els errors del sistema amb PCA amb el sistema sense PCA.
 
-# deepsort_detection.py
-
-Aplica un model de detecció basat en extracció del fons (background), estimat de manera dinamica, i, posteriorment, detecció de components conexes.
-
-A partir de les deteccions, s'extrau retalls de les imatges d'un maxim de 224x224 px, en cas de retalls més petits, s'aplica padding amb el color mig de la imatge sencera (en aquest problema en particular, el color mig aproxima prou bé el fons).
-
-Aquests retalls son processats per una xarxa neuronal de la qual s'extrau una capa intermitja (la ultima abans de la classificació) a mode de vector de caracteristiques d'aparença.
-
-El resultat es un arxiu MOT Challenge de deteccions (10 elements per fila) ampliat amb les caracteristiques de cada detecció (N=50 elements adicionals per fila)
-
-    python3 deepsort_detection.py ./DATA/output_4_gt.mp4 ./OUTPUT/output_4_2_apparence.txt --varThreshold=20 --startWriteFrames=500
-
 # deepsort_track.py
 
 Aplica el model de tracking definit en [DeepSORT](https://arxiv.org/pdf/1703.07402.pdf). Requereix un arxiu amb les deteccions i els descriptors d'aparença en format MOT Challenge ampliat (resultat de deepsort_detection.py).
