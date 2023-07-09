@@ -145,6 +145,10 @@ if __name__ == "__main__":
     for x in aux:
         if x[0] == "OUTPUT_DIR":
             x[1] = str(increment_path(x[1], mkdir=True))
+        
+        if 'PROB' in x[0]:
+            x[1] = str(float(x[1]))
+            
         args.opts += x
 
     print("\n\nCommand Line Args:", args)
