@@ -138,7 +138,7 @@ def default_argument_parser():
 
 
 if __name__ == "__main__":
-    args = improve_parser(default_argument_parser()).parse_args()
+    args = default_argument_parser().parse_args()
     args.OUTPUT_DIR = str(increment_path(args.OUTPUT_DIR, mkdir=True))
     print("Command Line Args:", args)
     launch(

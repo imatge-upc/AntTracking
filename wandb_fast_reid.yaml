@@ -21,6 +21,7 @@ metric:
   name: mINP
   goal: maximize
 
+parameters:
   OUTPUT_DIR:
     value: runs/apparence/train
 
