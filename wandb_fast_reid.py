@@ -199,12 +199,12 @@ def improve_parser(parser):
     parser.add_argument("--TEST.ROC.ENABLED", action="store_true", help="sdfgh")
     parser.add_argument("--TEST.IMS_PER_BATCH", type=int, default=128, help="sdfgh")
 
-    parser.add_argument(
-        "opts",
-        help="Modify config options using the command-line",
-        default=None,
-        nargs=argparse.REMAINDER,
-    )
+    #parser.add_argument(
+    #    "opts",
+    #    help="Modify config options using the command-line",
+    #    default=None,
+    #    nargs=argparse.REMAINDER,
+    #)
 
     return parser
 
