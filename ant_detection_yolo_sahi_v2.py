@@ -18,7 +18,7 @@ if __name__ == '__main__':
             model_type='yolov8', # one of 'yolov5', 'mmdet', 'detectron2'
             model_path=weights_path, # path to model weight file
             model_confidence_threshold=conf,
-            model_device='cpu', # or 'cuda:0'
+            model_device='cuda:0', # 'cpu' or 'cuda:0'
             source=input_video, # image, folder or video path
             slice_height = imgsz,
             slice_width = imgsz,
