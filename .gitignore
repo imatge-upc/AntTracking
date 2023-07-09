@@ -1,9 +1,14 @@
 DATA/*.mp4
 DATA/*.avi
+DATA/*.pt
 OUTPUT/VIDEOS/
+OUTPUT/IMAGES/
 *.zip
 runs/
+DATA/datasets/
 bus.jpg
+OUTPUT/output_4_gt_fastreid.txt
+OUTPUT/split_output_4_gt_fastreid.txt
 
 
 # Byte-compiled / optimized / DLL files
