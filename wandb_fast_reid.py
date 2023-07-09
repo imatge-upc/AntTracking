@@ -101,8 +101,77 @@ def main(args):
     return trainer.train()
 
 
+def improve_parser(parser):
+    parser.add_argument("--OUTPUT_DIR", type=str, default='runs/apparence/train', help="sdfgh")
+
+    parser.add_argument("--INPUT.SIZE_TRAIN", type=str, default='(64, 64)', help="sdfgh")
+    parser.add_argument("--INPUT.AFFINE.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--INPUT.AUGMIX.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--INPUT.AUGMIX.PROB", type=float, default=0.0, help="sdfgh")
+    parser.add_argument("--INPUT.AUTOAUG.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--INPUT.AUTOAUG.PROB", type=float, default=0.0, help="sdfgh")
+    parser.add_argument("--INPUT.CJ.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--INPUT.CJ.PROB", type=float, default=0.0, help="sdfgh")
+    parser.add_argument("--INPUT.CJ.BRIGHTNESS", type=float, default=0.0, help="sdfgh")
+    parser.add_argument("--INPUT.CJ.CONTRAST", type=float, default=0.0, help="sdfgh")
+    parser.add_argument("--INPUT.CJ.HUE", type=float, default=0.0, help="sdfgh")
+    parser.add_argument("--INPUT.CJ.SATURATION", type=float, default=0.0, help="sdfgh")
+    parser.add_argument("--INPUT.CROP.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--INPUT.CROP.RATIO", type=str, default="(0., 1.)", help="sdfgh")
+    parser.add_argument("--INPUT.CROP.SCALE", type=str, default="(0., 1.)", help="sdfgh")
+    parser.add_argument("--INPUT.CROP.SIZE", type=str, default='(64, 64)', help="sdfgh")
+    parser.add_argument("--INPUT.FLIP.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--INPUT.FLIP.PROB", type=float, default=0.0, help="sdfgh")
+    parser.add_argument("--INPUT.REA.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--INPUT.REA.PROB", type=float, default=0.0, help="sdfgh")
+    parser.add_argument("--INPUT.REA.VALUE", type=str, default="(0.0, 0.0, 0.0)", help="sdfgh")
+    parser.add_argument("--INPUT.RPT.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--INPUT.RPT.PROB", type=float, default=0.0, help="sdfgh")
+
+    parser.add_argument("--MODEL.LOSSES.CE.ALPHA", type=float, default=0.2, help="sdfgh")
+    parser.add_argument("--MODEL.LOSSES.CE.EPSILON", type=float, default=0.1, help="sdfgh")
+    parser.add_argument("--MODEL.LOSSES.CE.SCALE", type=float, default=1.0, help="sdfgh")
+    parser.add_argument("--MODEL.LOSSES.TRI.HARD_MINING", action="store_true", help="sdfgh")
+    parser.add_argument("--MODEL.LOSSES.TRI.NORM_FEAT", action="store_true", help="sdfgh")
+    parser.add_argument("--MODEL.LOSSES.TRI.MARGIN", type=float, default=0.3, help="sdfgh")
+    parser.add_argument("--MODEL.LOSSES.TRI.SCALE", type=float, default=1.0, help="sdfgh")
+    parser.add_argument("--MODEL.PIXEL_MEAN", type=str, default="(123.675, 116.28, 103.53)", help="sdfgh")
+    parser.add_argument("--MODEL.PIXEL_STD", type=str, default="(58.395, 57.12, 57.375)", help="sdfgh")
+    parser.add_argument("--MODEL.QUEUE_SIZE", type=int, default=8192, help="sdfgh")
+
+    parser.add_argument("--SOLVER.AMP.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--SOLVER.BASE_LR", type=float, default=0.001, help="sdfgh")
+    parser.add_argument("--SOLVER.BIAS_LR_FACTOR", type=float, default=1.0, help="sdfgh")
+    parser.add_argument("--SOLVER.CLIP_GRADIENTS.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--SOLVER.CLIP_GRADIENTS.CLIP_TYPE", type=str, default="norm", help="sdfgh")
+    parser.add_argument("--SOLVER.CLIP_GRADIENTS.CLIP_VALUE", type=float, default=0.0, help="sdfgh")
+    parser.add_argument("--SOLVER.CLIP_GRADIENTS.NORM_TYPE", type=float, default=2.0, help="sdfgh")
+    parser.add_argument("--SOLVER.DELAY_EPOCHS", type=int, default=0, help="sdfgh")
+    parser.add_argument("--SOLVER.FREEZE_ITERS", type=int, default=0, help="sdfgh")
+    parser.add_argument("--SOLVER.GAMMA", type=float, default=0.1, help="sdfgh")
+    parser.add_argument("--SOLVER.HEADS_LR_FACTOR", type=float, default=1.0, help="sdfgh")
+    parser.add_argument("--SOLVER.IMS_PER_BATCH", type=int, default=64, help="sdfgh")
+    parser.add_argument("--SOLVER.MOMENTUM", type=float, default=0.9, help="sdfgh")
+    parser.add_argument("--SOLVER.NESTEROV", action="store_true", help="sdfgh")
+    parser.add_argument("--SOLVER.OPT", type=str, default="Adam", help="sdfgh")
+    parser.add_argument("--SOLVER.SCHED", type=str, default="MultiStepLR", help="sdfgh")
+    parser.add_argument("--SOLVER.STEPS", type=str, default="(40, 90)", help="sdfgh")
+    parser.add_argument("--SOLVER.WARMUP_FACTOR", type=float, default=0.1, help="sdfgh")
+    parser.add_argument("--SOLVER.WARMUP_ITERS", type=int, default=2000, help="sdfgh")
+    parser.add_argument("--SOLVER.WARMUP_METHOD", type=str, default="linear", help="sdfgh")
+    parser.add_argument("--SOLVER.WEIGHT_DECAY", type=float, default=0.0005, help="sdfgh")
+    parser.add_argument("--SOLVER.WEIGHT_DECAY_BIAS", type=float, default=0.0005, help="sdfgh")
+    parser.add_argument("--SOLVER.WEIGHT_DECAY_NORM", type=float, default=0.0005, help="sdfgh")
+
+    parser.add_argument("--TEST.FLIP.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--TEST.ROC.ENABLED", action="store_true", help="sdfgh")
+    parser.add_argument("--TEST.IMS_PER_BATCH", type=int, default=128, help="sdfgh")
+
+    return parser
+
+
 if __name__ == "__main__":
-    args = default_argument_parser().parse_args()
+    args = improve_parser(default_argument_parser()).parse_args()
     print("Command Line Args:", args)
     launch(
         main,
