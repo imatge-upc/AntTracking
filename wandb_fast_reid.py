@@ -139,8 +139,16 @@ def default_argument_parser():
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
-    args.OUTPUT_DIR = str(increment_path(args.OUTPUT_DIR, mkdir=True))
-    print("Command Line Args:", args)
+    
+    aux = [x.split("=") for x in args.opts]
+    args.opts = []
+    for x in aux:
+        if x[0] == "OUTPUT_DIR":
+            x[1] = str(increment_path(x[1], mkdir=True))
+        args.opts += x
+
+    print("\n\nCommand Line Args:", args)
+
     launch(
         main,
         args.num_gpus,
