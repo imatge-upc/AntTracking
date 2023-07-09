@@ -10,7 +10,9 @@ command:
   - ${env}
   - python
   - ${program}
-  - ${args_no_boolean_flags}
+  - "--config-file=./fastreid_configs/Market1501/bagtricks_R50.yml"
+  - "--num-gpus=4"
+  - ${args_no_hyphens}
 
 program: wandb_fast_reid.py
 
@@ -19,15 +21,8 @@ metric:
   name: mINP
   goal: maximize
 
-parameters:
-  config-file:
-    value: ./fastreid_configs/Market1501/bagtricks_R50.yml
-
   OUTPUT_DIR:
     value: runs/apparence/train
-  
-  num-gpus:
-    value: 4
 
   INPUT.SIZE_TRAIN:
     value: "(64, 64)"
