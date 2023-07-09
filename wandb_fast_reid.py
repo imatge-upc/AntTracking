@@ -130,6 +130,7 @@ def default_argument_parser():
     return parser
 
 def improve_parser(parser):
+    """
     parser.add_argument("--OUTPUT_DIR", type=str, default='runs/apparence/train', help="sdfgh")
 
     parser.add_argument("--INPUT.SIZE_TRAIN", type=str, default='(64, 64)', help="sdfgh")
@@ -198,6 +199,7 @@ def improve_parser(parser):
     parser.add_argument("--TEST.FLIP.ENABLED", action="store_true", help="sdfgh")
     parser.add_argument("--TEST.ROC.ENABLED", action="store_true", help="sdfgh")
     parser.add_argument("--TEST.IMS_PER_BATCH", type=int, default=128, help="sdfgh")
+    """
 
     parser.add_argument(
         "opts",
