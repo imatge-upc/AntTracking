@@ -137,6 +137,30 @@ def default_argument_parser():
     return parser
 
 
+FLOAT_OPTS_LIST = [
+    'PROB',
+    'BRIGHTNESS',
+    'CONTRAST',
+    'HUE',
+    'SATURATION',
+    'ALPHA',
+    'EPSILON',
+    'MODEL.LOSSES.CE.SCALE',
+    'MODEL.LOSSES.TRI.SCALE',
+    'MARGIN',
+    'BIAS_LR_FACTOR',
+    'CLIP_VALUE',
+    'NORM_TYPE',
+    'GAMMA',
+    'HEADS_LR_FACTOR',
+    'MOMENTUM',
+    'WARMUP_FACTOR',
+    'WEIGHT_DECAY',
+    'WEIGHT_DECAY_BIAS',
+    'WEIGHT_DECAY_NORM'
+]
+
+
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
     
@@ -146,9 +170,9 @@ if __name__ == "__main__":
         if x[0] == "OUTPUT_DIR":
             x[1] = str(increment_path(x[1], mkdir=True))
         
-        if 'PROB' in x[0]:
+        if any([k in x[0] for k in FLOAT_OPTS_LIST]):
             x[1] = str(float(x[1]))
-            
+
         args.opts += x
 
     print("\n\nCommand Line Args:", args)
