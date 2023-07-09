@@ -21,7 +21,7 @@ metric:
 
 parameters:
   config-file:
-    value: ./configs/Market1501/bagtricks_R50.yml
+    value: ./fastreid_configs/Market1501/bagtricks_R50.yml
 
   OUTPUT_DIR:
     value: runs/apparence/train
