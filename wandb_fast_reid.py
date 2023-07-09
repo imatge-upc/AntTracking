@@ -1,4 +1,5 @@
 
+import argparse
 from collections import defaultdict
 import os
 from pathlib import Path
@@ -6,7 +7,7 @@ import sys
 import wandb
 
 from fastreid.config import get_cfg
-from fastreid.engine import DefaultTrainer, default_argument_parser, default_setup, launch
+from fastreid.engine import DefaultTrainer, default_setup, launch
 from fastreid.engine.train_loop import HookBase
 from fastreid.utils.checkpoint import Checkpointer
 from fastreid.utils.events import get_event_storage
@@ -101,6 +102,34 @@ def main(args):
     return trainer.train()
 
 
+def default_argument_parser():
+    """
+    Create a parser with some common arguments used by fastreid users.
+    Returns:
+        argparse.ArgumentParser:
+    """
+    parser = argparse.ArgumentParser(description="fastreid Training")
+    parser.add_argument("--config-file", default="", metavar="FILE", help="path to config file")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="whether to attempt to resume from the checkpoint directory",
+    )
+    parser.add_argument("--eval-only", action="store_true", help="perform evaluation only")
+    parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus *per machine*")
+    parser.add_argument("--num-machines", type=int, default=1, help="total number of machines")
+    parser.add_argument(
+        "--machine-rank", type=int, default=0, help="the rank of this machine (unique per machine)"
+    )
+
+    # PyTorch still may leave orphan processes in multi-gpu training.
+    # Therefore we use a deterministic way to obtain port,
+    # so that users are aware of orphan processes by seeing the port occupied.
+    port = 2 ** 15 + 2 ** 14 + hash(os.getuid() if sys.platform != "win32" else 1) % 2 ** 14
+    parser.add_argument("--dist-url", default="tcp://127.0.0.1:{}".format(port))
+    
+    return parser
+
 def improve_parser(parser):
     parser.add_argument("--OUTPUT_DIR", type=str, default='runs/apparence/train', help="sdfgh")
 
@@ -169,6 +198,13 @@ def improve_parser(parser):
     parser.add_argument("--TEST.FLIP.ENABLED", action="store_true", help="sdfgh")
     parser.add_argument("--TEST.ROC.ENABLED", action="store_true", help="sdfgh")
     parser.add_argument("--TEST.IMS_PER_BATCH", type=int, default=128, help="sdfgh")
+
+    parser.add_argument(
+        "opts",
+        help="Modify config options using the command-line",
+        default=None,
+        nargs=argparse.REMAINDER,
+    )
 
     return parser
 
