@@ -37,7 +37,7 @@ if __name__ == '__main__':
         model_type='yolov8',
         model_path=weights_path,
         confidence_threshold=conf,
-        device="cpu", # or 'cuda:0'
+        device="cuda:0", # 'cpu' or 'cuda:0'
     )
 
     def detector_model(img):
