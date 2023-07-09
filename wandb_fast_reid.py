@@ -77,7 +77,6 @@ def setup(args):
     cfg = get_cfg()
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
-    cfg.OUTPUT_DIR = increment_path(cfg.OUTPUT_DIR, mkdir=True)
     cfg.freeze()
     default_setup(cfg, args)
     return cfg
@@ -212,6 +211,7 @@ def improve_parser(parser):
 
 if __name__ == "__main__":
     args = improve_parser(default_argument_parser()).parse_args()
+    args.OUTPUT_DIR = str(increment_path(args.OUTPUT_DIR, mkdir=True))
     print("Command Line Args:", args)
     launch(
         main,
