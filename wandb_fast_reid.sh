@@ -1,7 +1,7 @@
 
 source ~/venv/fastreid/bin/activate 
 
-LONG_OUTPUT=$(python wandb_fast_reid.py "$@")
+{ LONG_OUTPUT=$(python wandb_fast_reid.py "$@" | tee /dev/fd/3 ); } 3>&1
 i=0
 
 while true;
