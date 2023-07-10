@@ -17,6 +17,7 @@ YOLOv8/
 .nfs*
 yolov8n.pt
 datasets/
+logs/
 
 
 # Byte-compiled / optimized / DLL files
