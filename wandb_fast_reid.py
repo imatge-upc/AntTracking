@@ -1,56 +1,15 @@
 
 import argparse
-from collections import defaultdict
 import os
 from pathlib import Path
 import sys
-import wandb
 
 from fastreid.config import get_cfg
 from fastreid.engine import DefaultTrainer, default_setup, launch
-from fastreid.engine.train_loop import HookBase
 from fastreid.utils.checkpoint import Checkpointer
-from fastreid.utils.events import get_event_storage
 
 
 sys.path.append('.')
-
-
-class WandbHook(HookBase):
-
-    def __init__(self, eval_period, cfg):
-        self._period = eval_period
-        self._last_write = -1
-
-        wandb.run or wandb.init(project='fastreid')
-
-        wandb.config.update(cfg)
-
-    def log_step(self):
-        storage = get_event_storage()
-        to_save = defaultdict(dict) # By default, any elements of to_save are empty dictionaries
-
-        for k, (v, iter) in storage.latest().items():
-            if iter <= self._last_write:
-                continue
-            to_save[iter][k] = v
-        
-        if len(to_save):
-            all_iters = sorted(to_save.keys())
-            self._last_write = max(all_iters)
-        
-        for itr, scalars_per_iter in to_save.items():
-            scalars_per_iter["iteration"] = itr
-            wandb.run.log(scalars_per_iter)
-
-    def after_epoch(self):
-        next_epoch = self.trainer.epoch + 1 # From HookBase
-        if self._period > 0 and next_epoch % self._period == 0:
-            self.log_step()
-
-    def after_train(self):
-        self.log_step()
-
 
 def increment_path(path, exist_ok=False, sep='', mkdir=False):
 
@@ -97,7 +56,6 @@ def main(args):
     trainer = DefaultTrainer(cfg)
 
     trainer.resume_or_load(resume=args.resume)
-    trainer.register_hooks([WandbHook(trainer.cfg.TEST.EVAL_PERIOD, trainer.cfg)])
     return trainer.train()
 
 

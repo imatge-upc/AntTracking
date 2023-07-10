@@ -3,7 +3,7 @@ command:
   - "srun"
   - "-c"
   - "8"
-  - "--gres=gpu:4"
+  - "--gres=gpu:1,gpumem:24G"
   - "--mem"
   - "32G"
   - "--time=10:00:00"
@@ -11,7 +11,7 @@ command:
   - python
   - ${program}
   - "--config-file=./fastreid_configs/Market1501/bagtricks_R50.yml"
-  - "--num-gpus=4"
+  - "--num-gpus=1"
   - ${args_no_hyphens}
 
 program: wandb_fast_reid.py
