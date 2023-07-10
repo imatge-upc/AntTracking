@@ -1,4 +1,6 @@
 
+# TODO: recover previous comits where a Hook was used and add https://docs.wandb.ai/guides/track/log/distributed-training into it
+
 import argparse
 import os
 from pathlib import Path
