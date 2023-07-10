@@ -3,18 +3,17 @@ command:
   - "srun"
   - "-c"
   - "8"
-  - "--gres=gpu:1,gpumem:24G"
+  - "--gres=gpu:4,gpumem:24G"
   - "--mem"
   - "32G"
   - "--time=10:00:00"
-  - ${env}
-  - python
+  - bash
   - ${program}
   - "--config-file=./fastreid_configs/Market1501/bagtricks_R50.yml"
-  - "--num-gpus=1"
+  - "--num-gpus=4"
   - ${args_no_hyphens}
 
-program: wandb_fast_reid.py
+program: wandb_fast_reid.sh
 
 method: bayes
 metric:
