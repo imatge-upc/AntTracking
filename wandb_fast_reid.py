@@ -97,7 +97,7 @@ def main(args):
     trainer = DefaultTrainer(cfg)
 
     trainer.resume_or_load(resume=args.resume)
-    trainer.register_hooks(WandbHook(trainer.cfg.TEST.EVAL_PERIOD, trainer.cfg))
+    trainer.register_hooks([WandbHook(trainer.cfg.TEST.EVAL_PERIOD, trainer.cfg)])
     return trainer.train()
 
 
