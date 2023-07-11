@@ -41,6 +41,7 @@ if __name__ == '__main__':
     config = yaml.safe_load(Path(yaml_path).read_text())
     config = flatten(config)
     wandb.init(config=config)
+    wandb.config['OUTPUT_DIR'] = output_path
 
     with open(metrics_path) as f:
         df = pd.DataFrame(json.loads(line) for line in f)
@@ -52,7 +53,7 @@ if __name__ == '__main__':
         metrics = row[row.notna()].to_dict()
         iteration = metrics['iteration']
 
-        wandb.log(metrics, step=iteration)
+        wandb.log(metrics, step=int(iteration))
 
     best = list(df[df['mINP'] == df['mINP'].max()].iterrows())[0][1].to_dict()
     for key, val in best.items():
