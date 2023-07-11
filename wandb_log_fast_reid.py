@@ -19,12 +19,14 @@ if __name__ == '__main__':
 
     output_path = args['<output_path>']
 
+    output_path = os.path.join(*output_path[1:].strip("'").split('/'))
+
     yaml_path = os.path.join(output_path, "config.yaml")
     metrics_path = os.path.join(output_path, "metrics.json")
 
     wandb.init(config=yaml_path)
 
-    with open('./runs/apparence/train01_colonia_256_128/metrics.json') as f:
+    with open(metrics_path) as f:
         df = pd.DataFrame(json.loads(line) for line in f)
 
     df = df.sort_values('iteration', ignore_index=True)
