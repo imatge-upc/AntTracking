@@ -9,6 +9,8 @@ DATA/datasets/
 bus.jpg
 OUTPUT/output_4_gt_fastreid.txt
 OUTPUT/split_output_4_gt_fastreid.txt
+OUTPUT/minut_annotations_fastreid.txt
+OUTPUT/split_minut_annotations_fastreid.txt
 nohup.out
 nohup*.out
 nohup*

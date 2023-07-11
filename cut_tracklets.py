@@ -94,10 +94,16 @@ if __name__ == '__main__':
     output_file = args['<output_file>']
     thr = float(args['--thr'])
 
-    df = pd.read_csv(tracking_file, header=0, names=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'a','b','c', 'd'])
+    seq_dets = np.loadtxt(tracking_file, delimiter=',', dtype=np.float64)
+    df = pd.DataFrame(seq_dets[:, :10], columns=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'conf','a','b', 'c'])
+    #feats = seq_dets[:, 10:]
     
     new_df = cut_conflict(df, thr)
-    good = new_df[new_df['trackId'] != -1]
-    
-    good.to_csv(output_file, index=False, header=False)
+    #good = new_df[new_df['trackId'] != -1]
+    #good.to_csv(output_file, index=False, header=False)
+
+    good = seq_dets
+    good[:, 2] = new_df['trackId'] 
+    good = good[new_df['trackId'] != -1]
+    np.savetxt(output_file, good, delimiter=",", fmt='%.9g')
     

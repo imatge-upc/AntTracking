@@ -203,7 +203,7 @@ def compare_first_with_last(tracklets_df, descriptors, min_group=4):
 
 DOCTEXT = f"""
 Usage:
-  reid_clustering_test.py <tracking_file> <output_dir> [--thr=<th>]
+  reid_clustering_test.py <tracking_file> <gt_tracking_file> <output_dir> [--thr=<th>]
 
 Options:
   --thr=<th>      Max normalized distance between tracklets features [default: 0.00025]
@@ -212,33 +212,49 @@ Options:
 
 if __name__ == '__main__':
 
+    # INPUT CONFIG
     args = docopt(DOCTEXT, argv=sys.argv[1:], help=True, version=None, options_first=False)
 
     tracking_file = args['<tracking_file>']
+    gt_tracking_file = args['<gt_tracking_file>']
     output_dir = args['<output_dir>']
     thr = float(args['--thr'])
 
+    # READ SPLIT TRACKS
     seq_dets = np.loadtxt(tracking_file, delimiter=',', dtype=np.float64)
     tracklets_df = pd.DataFrame(seq_dets[:, :10], columns=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'conf','a','b', 'c'])
     feats = seq_dets[:, 10:]
     tracklets_df['feats'] = feats.tolist()
 
+    # TODO: READ GROUND TRUTH
+
+    # MAKE VALID PYTHON MATRIX INDEX
     trackIds = np.sort(np.unique(tracklets_df['trackId']))
     index = {tck_id : mat_id for mat_id, tck_id in enumerate(trackIds)}
     tracklets_df['trackIdx'] = tracklets_df['trackId'].apply(lambda x : index[x])
 
+    # COMPUTE TRACKLETS MEAN FEATURES
     descriptors = {mat_id : mean_descriptor(tracklets_df[tracklets_df['trackId'] == tck_id]) for mat_id, tck_id in enumerate(trackIds)}
     descriptors_df = pd.DataFrame(descriptors)
 
+    # COMPUTE THE DISTANCE BETWEEN TRACKLET FEATURES
     dist_matrix = compute_matrix(tracklets_df, descriptors_df, causality=True)
 
+    # FILTER OUT BIG DISTANCES
     merging_matrix = dist_matrix.copy()
     merging_matrix[merging_matrix > thr] = np.inf
 
+    # GET THE RELATION BETWEEN TRACKLETS
     merging_dict = compute_merging(merging_matrix)
     
+    # EDIT THE TRACK ID SO IT IS VALID MOT
     merged_tracklets_df = tracklets_df[['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'conf','a','b', 'c']].copy()
     merged_tracklets_df['trackId'] = tracklets_df['trackIdx'].apply(lambda x : merging_dict.get(x, x) + 1)
+
+    # MAKE THE GROUND TRUTH IDs COINCIDE WITH THE FIRST PART OF THEIR SPLIT NEW ID: Problem joining errors!
+    #gt_tracking_df['trackId'] = gt_tracking_file['trackId'].apply(lambda x : merging_dict.get(index[x], index[x]) + 1)
+
+    # TODO: RANK 1 (for each merging_matrix, see if gt_tracking_df[tracklets_df['trackIdx'] == key]['trackId'].iloc[0])
 
     first_vs_last, first_vs_mean, last_vs_mean, first_vs_worse, last_vs_worse = compare_first_with_last(tracklets_df, descriptors, min_group=4)
     first_last_bar = plot_first_last(first_vs_last, first_vs_mean, last_vs_mean, first_vs_worse, last_vs_worse)

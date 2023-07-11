@@ -5,6 +5,7 @@ import argparse
 import os
 from pathlib import Path
 import sys
+import wandb
 
 from fastreid.config import get_cfg
 from fastreid.engine import DefaultTrainer, default_setup, launch
@@ -123,12 +124,18 @@ FLOAT_OPTS_LIST = [
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
+    wandb.init()
     
     aux = [x.split("=") for x in args.opts]
     args.opts = []
     for x in aux:
         if x[0] == "OUTPUT_DIR":
             x[1] = str(increment_path(x[1], mkdir=True))
+            wandb.config['OUTPUT_DIR_FINAL'] = x[1]
+            #id_ = f"{wandb.run.entity}/{wandb.run.project}/{wandb.run.id}"
+            id_ = f"{wandb.run.id}"
+            with open(os.path.join(x[1], 'wandb_id.txt'), 'w') as out_file:
+                print (id_, file=out_file)
         
         if any([k in x[0] for k in FLOAT_OPTS_LIST]):
             x[1] = str(float(x[1]))
