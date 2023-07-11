@@ -1,10 +1,24 @@
 
+from collections.abc import MutableMapping
 from docopt import docopt
 import json
 import os
 import pandas as pd
+from pathlib import Path
 import sys
 import wandb
+import yaml
+
+
+def flatten(dictionary, parent_key='', separator='.'):
+    items = []
+    for key, value in dictionary.items():
+        new_key = parent_key + separator + key if parent_key else key
+        if isinstance(value, MutableMapping):
+            items.extend(flatten(value, new_key, separator=separator).items())
+        else:
+            items.append((new_key, value))
+    return dict(items)
 
 
 DOCTEXT = f"""
@@ -24,7 +38,9 @@ if __name__ == '__main__':
     yaml_path = os.path.join(output_path, "config.yaml")
     metrics_path = os.path.join(output_path, "metrics.json")
 
-    wandb.init(config=yaml_path)
+    config = yaml.safe_load(Path(yaml_path).read_text())
+    config = flatten(config)
+    wandb.init(config=config)
 
     with open(metrics_path) as f:
         df = pd.DataFrame(json.loads(line) for line in f)
