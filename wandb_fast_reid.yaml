@@ -118,7 +118,7 @@ parameters:
     value: True
 
   SOLVER.MAX_EPOCH:
-    value: 120
+    value: 1440
   SOLVER.BASE_LR:
     distribution: uniform
     max: 0.01
