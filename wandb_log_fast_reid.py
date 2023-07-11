@@ -35,13 +35,19 @@ if __name__ == '__main__':
 
     output_path = os.path.join(*output_path[1:].strip("'").split('/'))
 
+    wandb_id_path = os.path.join(output_path, 'wandb_id.txt')
     yaml_path = os.path.join(output_path, "config.yaml")
     metrics_path = os.path.join(output_path, "metrics.json")
 
     config = yaml.safe_load(Path(yaml_path).read_text())
     config = flatten(config)
-    wandb.init(config=config)
-    wandb.config['OUTPUT_DIR_FINAL'] = output_path
+
+    with open(wandb_id_path) as f:
+        id_ = f.readline()
+    
+    wandb.init(id=id_, resume="must") # TODO: see if this work, else return file back into 994d4e471fc32e24072a6b34d88c12e4bd9090b0
+    for k, v in config.items():
+        wandb.config[k] = v
 
     with open(metrics_path) as f:
         df = pd.DataFrame(json.loads(line) for line in f)
