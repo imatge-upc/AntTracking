@@ -226,7 +226,8 @@ if __name__ == '__main__':
     feats = seq_dets[:, 10:]
     tracklets_df['feats'] = feats.tolist()
 
-    # TODO: READ GROUND TRUTH
+    #  READ GROUND TRUTH
+    gt_tracking_df = pd.read_csv(gt_tracking_file, header=0, names=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'conf','a','b', 'c'])
 
     # MAKE VALID PYTHON MATRIX INDEX
     trackIds = np.sort(np.unique(tracklets_df['trackId']))
@@ -251,10 +252,18 @@ if __name__ == '__main__':
     merged_tracklets_df = tracklets_df[['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'conf','a','b', 'c']].copy()
     merged_tracklets_df['trackId'] = tracklets_df['trackIdx'].apply(lambda x : merging_dict.get(x, x) + 1)
 
-    # MAKE THE GROUND TRUTH IDs COINCIDE WITH THE FIRST PART OF THEIR SPLIT NEW ID: Problem joining errors!
-    #gt_tracking_df['trackId'] = gt_tracking_file['trackId'].apply(lambda x : merging_dict.get(index[x], index[x]) + 1)
+    # COMPUTE TRACKLETS trackIdx GROUND TRUTH trackId
+    
+    split_to_gt = {index[id_] : gt_tracking_df[tracklets_df['trackId'] == id_]['trackId'].iloc[0] for id_ in trackIds}
 
-    # TODO: RANK 1 (for each merging_matrix, see if gt_tracking_df[tracklets_df['trackIdx'] == key]['trackId'].iloc[0])
+    # RANK 1
+    rank = 0
+    total = len(merging_matrix)
+    for k, v in merging_matrix.items():
+        if split_to_gt[k] == split_to_gt[v]:
+            rank += 1
+    rank = rank / total
+    print(f'rank1 = {rank}')
 
     first_vs_last, first_vs_mean, last_vs_mean, first_vs_worse, last_vs_worse = compare_first_with_last(tracklets_df, descriptors, min_group=4)
     first_last_bar = plot_first_last(first_vs_last, first_vs_mean, last_vs_mean, first_vs_worse, last_vs_worse)
