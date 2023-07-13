@@ -28,8 +28,17 @@ parameters:
     value: "(64, 64)"
   INPUT.SIZE_TEST:
     value: "(64, 64)"
+
+  SOLVER.CHECKPOINT_PERIOD:
+    value: 1400
   
 
+  DATALOADER.SAMPLER_TRAIN:
+    value: NaiveIdentitySampler
+  DATALOADER.NUM_INSTANCE:
+    distribution: int_uniform
+    min: 4
+    max: 24
 
   INPUT.AFFINE.ENABLED:
     values: [False, True]
