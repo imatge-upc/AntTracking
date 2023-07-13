@@ -1,6 +1,8 @@
 
 source ~/venv/fastreid/bin/activate 
 
+wandb sync
+
 { LONG_OUTPUT=$(python wandb_fast_reid.py "$@" | tee /dev/fd/3 ); } 3>&1
 i=0
 
@@ -19,6 +21,8 @@ do
             exit 1
         fi
 done
+
+wandb sync
 
 python wandb_log_fast_reid.py "$OUTPUT_DIR"
 
