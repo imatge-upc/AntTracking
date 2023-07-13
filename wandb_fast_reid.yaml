@@ -32,30 +32,44 @@ parameters:
 
 
   INPUT.AFFINE.ENABLED:
-    value: False
+    values: [False, True]
 
   INPUT.AUGMIX.ENABLED:
-    value: False
+    values: [False, True]
   INPUT.AUGMIX.PROB:
-    value: 0.0
+    distribution: uniform
+    min: 0.0
+    max: 1
 
   INPUT.AUTOAUG.ENABLED:
-    value: False
+    values: [False, True]
   INPUT.AUTOAUG.PROB:
-    value: 0.0
+    distribution: uniform
+    min: 0.0
+    max: 1
 
   INPUT.CJ.ENABLED:
-    value: False
+    values: [False, True]
   INPUT.CJ.PROB:
-    value: 0.0
+    distribution: uniform
+    min: 0.0
+    max: 1
   INPUT.CJ.BRIGHTNESS:
-    value: 0.0
+    distribution: uniform
+    min: 0.0
+    max: 1
   INPUT.CJ.CONTRAST:
-    value: 0.0
+    distribution: uniform
+    min: 0.0
+    max: 1
   INPUT.CJ.HUE:
-    value: 0.0
+    distribution: uniform
+    min: 0.0
+    max: 1
   INPUT.CJ.SATURATION:
-    value: 0.0
+    distribution: uniform
+    min: 0.0
+    max: 1
 
   INPUT.CROP.ENABLED:
     value: False
@@ -76,19 +90,25 @@ parameters:
   INPUT.PADDING.MODE:
     value: "constant"
   INPUT.PADDING.SIZE:
-    value: 10
+    distribution: int_uniform
+    min: 1
+    max: 10
 
   INPUT.REA.ENABLED:
-    value: True
+    values: [False, True]
   INPUT.REA.PROB:
-    value: 0.5
+    distribution: uniform
+    min: 0.0
+    max: 1
   INPUT.REA.VALUE:
     value: "(123.675, 116.28, 103.53)"
 
   INPUT.RPT.ENABLED:
-    value: False
+    values: [False, True]
   INPUT.RPT.PROB:
-    value: 0.0
+    distribution: uniform
+    min: 0.0
+    max: 1
 
   MODEL.LOSSES.CE.ALPHA:
     value: 0.2
@@ -102,7 +122,9 @@ parameters:
   MODEL.LOSSES.TRI.NORM_FEAT:
     value: False
   MODEL.LOSSES.TRI.MARGIN:
-    value: 0.3
+    distribution: uniform
+    min: 0.0
+    max: 0.3
   MODEL.LOSSES.TRI.SCALE:
     value: 1.0
 
@@ -115,10 +137,10 @@ parameters:
     value: 8192
 
   SOLVER.AMP.ENABLED:
-    value: True
+    values: [False, True]
 
   SOLVER.MAX_EPOCH:
-    value: 1440
+    value: 4320
   SOLVER.BASE_LR:
     distribution: uniform
     max: 0.01
@@ -127,7 +149,7 @@ parameters:
     value: 1.0
 
   SOLVER.CLIP_GRADIENTS.ENABLED:
-    value: False
+    values: [False, True]
   SOLVER.CLIP_GRADIENTS.CLIP_TYPE:
     value: "norm"
   SOLVER.CLIP_GRADIENTS.CLIP_VALUE:
@@ -136,7 +158,7 @@ parameters:
     value: 2.0
 
   SOLVER.DELAY_EPOCHS:
-    value: 0
+    value: 2000
   SOLVER.FREEZE_ITERS:
     value: 0
 
@@ -150,18 +172,20 @@ parameters:
     value: 64
 
   SOLVER.MOMENTUM:
-    value: 0.9
+    distribution: uniform
+    max: 0.95
+    min: 0.9
 
   SOLVER.NESTEROV:
     value: False
 
   SOLVER.OPT:
-    value: "Adam"
+    values: ["Adam", "SGD"]
 
   SOLVER.SCHED:
-    value: "MultiStepLR"
-  SOLVER.STEPS:
-    value: "(40, 90)"
+    value: "CosineAnnealingLR"
+  SOLVER.ETA_MIN_LR:
+    value: 0.0000007
 
   SOLVER.WARMUP_FACTOR:
     value: 0.1
