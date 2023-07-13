@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     config = yaml.safe_load(Path(yaml_path).read_text())
     config = flatten(config)
-    wandb.init(config=config)
+    wandb.init(config=config, resume=True)
     wandb.config['OUTPUT_DIR_FINAL'] = output_path
 
     with open(metrics_path) as f:
