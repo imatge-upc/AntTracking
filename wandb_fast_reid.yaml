@@ -36,9 +36,7 @@ parameters:
   DATALOADER.SAMPLER_TRAIN:
     value: NaiveIdentitySampler
   DATALOADER.NUM_INSTANCE:
-    distribution: int_uniform
-    min: 4
-    max: 24
+    values: [4, 16]
 
   INPUT.AFFINE.ENABLED:
     values: [False, True]
@@ -146,10 +144,10 @@ parameters:
     value: 8192
 
   SOLVER.AMP.ENABLED:
-    values: [False, True]
+    value: False
 
   SOLVER.MAX_EPOCH:
-    value: 4320
+    value: 360
   SOLVER.BASE_LR:
     distribution: uniform
     max: 0.01
@@ -167,7 +165,7 @@ parameters:
     value: 2.0
 
   SOLVER.DELAY_EPOCHS:
-    value: 2000
+    value: 20
   SOLVER.FREEZE_ITERS:
     value: 0
 
