@@ -3,7 +3,7 @@ source ~/venv/fastreid/bin/activate
 
 wandb sync
 
-{ LONG_OUTPUT=$(python wandb_fast_reid.py "$@" | tee /dev/fd/3 ); } 3>&1
+{ LONG_OUTPUT=$(python -u wandb_fast_reid.py "$@" | tee /dev/fd/3 ); } 3>&1
 i=0
 
 while true;
