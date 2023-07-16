@@ -58,3 +58,5 @@ if __name__ == '__main__':
     best = list(df[df['mINP'] == df['mINP'].max()].iterrows())[0][1].to_dict()
     for key, val in best.items():
         wandb.run.summary[key] = val
+    
+    wandb.finish(0, False)

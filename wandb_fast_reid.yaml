@@ -5,8 +5,8 @@ command:
   - "8"
   - "--gres=gpu:4"
   - "--mem"
-  - "32G"
-  - "--time=10:00:00"
+  - "128G"
+  - "--time=2:00:00"
   - bash
   - ${program}
   - "--config-file=./fastreid_configs/Market1501/bagtricks_R50.yml"
@@ -36,27 +36,27 @@ parameters:
   DATALOADER.SAMPLER_TRAIN:
     value: NaiveIdentitySampler
   DATALOADER.NUM_INSTANCE:
-    values: [4, 16]
+    value: 4
 
   INPUT.AFFINE.ENABLED:
-    values: [False, True]
+    value: True
 
   INPUT.AUGMIX.ENABLED:
-    values: [False, True]
+    value: True
   INPUT.AUGMIX.PROB:
     distribution: uniform
     min: 0.0
     max: 1
 
   INPUT.AUTOAUG.ENABLED:
-    values: [False, True]
+    value: True
   INPUT.AUTOAUG.PROB:
     distribution: uniform
     min: 0.0
     max: 1
 
   INPUT.CJ.ENABLED:
-    values: [False, True]
+    value: True
   INPUT.CJ.PROB:
     distribution: uniform
     min: 0.0
@@ -102,7 +102,7 @@ parameters:
     max: 10
 
   INPUT.REA.ENABLED:
-    values: [False, True]
+    value: True
   INPUT.REA.PROB:
     distribution: uniform
     min: 0.0
@@ -111,7 +111,7 @@ parameters:
     value: "(123.675, 116.28, 103.53)"
 
   INPUT.RPT.ENABLED:
-    values: [False, True]
+    value: True
   INPUT.RPT.PROB:
     distribution: uniform
     min: 0.0
@@ -147,7 +147,10 @@ parameters:
     value: False
 
   SOLVER.MAX_EPOCH:
-    value: 360
+    value: 1440
+  TEST.EVAL_PERIOD:
+    value: 144
+
   SOLVER.BASE_LR:
     distribution: uniform
     max: 0.01
@@ -165,9 +168,9 @@ parameters:
     value: 2.0
 
   SOLVER.DELAY_EPOCHS:
-    value: 20
+    value: 720
   SOLVER.FREEZE_ITERS:
-    value: 0
+    value: 1000
 
   SOLVER.GAMMA:
     value: 0.1
