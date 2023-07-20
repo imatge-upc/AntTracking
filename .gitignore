@@ -13,6 +13,10 @@ yolov8n.pt
 datasets/
 logs/
 *.mp4
+DATA
+OUTPUT
+YOLOv8
+runs
 
 
 # Byte-compiled / optimized / DLL files
