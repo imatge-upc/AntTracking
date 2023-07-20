@@ -1,5 +1,5 @@
 
-from itertools import groupby, chain
+from itertools import groupby
 import numpy as np
 from operator import itemgetter
 import pandas as pd

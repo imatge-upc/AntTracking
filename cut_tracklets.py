@@ -103,7 +103,7 @@ if __name__ == '__main__':
     #good.to_csv(output_file, index=False, header=False)
 
     good = seq_dets
-    good[:, 2] = new_df['trackId'] 
+    good[:, 1] = new_df['trackId'] 
     good = good[new_df['trackId'] != -1]
     np.savetxt(output_file, good, delimiter=",", fmt='%.9g')
     

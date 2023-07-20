@@ -1,8 +1,6 @@
 
 import cv2
-from itertools import groupby
 import numpy as np
-from operator import itemgetter
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 

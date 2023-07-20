@@ -15,7 +15,10 @@ class ApparenceBBoxDetector():
 
         start_h = int(self.height // 2 - h // 2)
         start_w = int(self.width // 2 - w // 2)
-        img[:, start_h : start_h + h, start_w : start_w + w] = frame[int(bbox[1]) : int(bbox[1]) + h, int(bbox[0]) : int(bbox[0]) + w, :].reshape(len(background_color), h, w)
+
+        crop = frame[int(bbox[1]) : int(bbox[1]) + h, int(bbox[0]) : int(bbox[0]) + w, :] #.reshape(len(background_color), h, w)
+
+        img[:, start_h : start_h + h, start_w : start_w + w] = np.moveaxis(crop, [0, 1, 2], [1, 2, 0])
         
         return img
     
