@@ -118,7 +118,7 @@ if __name__ == "__main__":
     save_frames = np.unique(tracker.seq_dets[:, 0])[::sampling_rate].astype(int)
 
     valid_frames = save_frames.copy()
-    np.random.shuffle(valid_frames)
+    #np.random.shuffle(valid_frames)
     valid_frames = valid_frames[: int(len(valid_frames) * test_frac)]
 
     os.makedirs(yolo_config_dir, exist_ok=False)
