@@ -155,10 +155,13 @@ if __name__ == '__main__':
 
     rad_axis = np.deg2rad(axis)
     fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+    fig.suptitle('Apparence Features Rotation Test')
     ax.plot(rad_axis, mean_dist)
     ax.plot(rad_axis, min_dist)
     ax.plot(rad_axis, max_dist)
+    ax.set_ylim([0, 1])
     ax.grid(True)
     ax.legend(['mean', 'min', 'max'])
+    ax.set_title('Ant with itself rotated')
 
     fig.savefig(output_file, dpi=300)
