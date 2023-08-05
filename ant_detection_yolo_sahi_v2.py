@@ -63,7 +63,7 @@ if __name__ == '__main__':
     results = []
     with VideoCapture(input_video) as capture:
         capture.set(cv.CAP_PROP_POS_FRAMES, initial_frame - 1)
-        last_frame = int(capture.get(cv.CAP_PROP_FRAME_COUNT)) if stop_frame <= 0 else min(int(capture.get(cv.CAP_PROP_FRAME_COUNT)), stop_frame)
+        last_frame = int(capture.get(cv.CAP_PROP_FRAME_COUNT)) if stop_frame <= 0 else min(int(capture.get(cv.CAP_PROP_FRAME_COUNT)), initial_frame + stop_frame)
 
         while stop_frame <= 0 or fr < initial_frame + stop_frame:
             fr = fr + 1

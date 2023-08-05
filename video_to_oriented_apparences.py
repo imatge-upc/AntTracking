@@ -1,6 +1,4 @@
 
-# TODO: Instead of crop and pad, study if "pad small side until big side and reshape" is good
-
 from docopt import docopt
 from contextlib import contextmanager
 import cv2 as cv
@@ -82,18 +80,61 @@ class PrecomputedMOTTracker():
         self.current_frame += 1
 
         return tcks
+
+def crop_pad(bbox, imgsz):
+
+    h = bbox[3]
+    w = bbox[2]
     
+    if h > imgsz:
+        excess = h - imgsz
+        crop = crop[excess // 2 : excess // 2 + imgsz, :, :]
+        h = imgsz
+    
+    if w > imgsz:
+        excess = w - imgsz
+        crop = crop[:, excess // 2 : excess // 2 + imgsz, :]
+        w = imgsz
+    
+    if h < imgsz or w < imgsz:
+        pad_h = (imgsz - h) // 2
+        pad_w = (imgsz - w) // 2
+        pad = ((pad_h, imgsz - h - pad_h), (pad_w, imgsz - w - pad_w))
+        pad_color = np.median(crop, axis=(0, 1))
+        
+        crop = np.stack([np.pad(crop[:, :, c], pad, mode='constant', constant_values=pad_color[c]) for c in range(3)], axis=2)
+    
+    return crop
+
+def pad_reshape(bbox, imgsz):
+
+    h = bbox[3]
+    w = bbox[2]
+    
+    pad = (max(h, w) - min(h, w)) // 2
+    pad = ((pad, max(h, w) - h - pad), (0, 0)) if h < w else ((0, 0), (pad, max(h, w) - w - pad))
+    pad_color = np.median(crop, axis=(0, 1))
+    
+    crop = np.stack([np.pad(crop[:, :, c], pad, mode='constant', constant_values=pad_color[c]) for c in range(3)], axis=2)
+    
+    crop = cv.resize(crop, (imgsz, imgsz), interpolation=cv.INTER_AREA)
+    
+    return crop
+
     
 DOCTEXT = f"""
 Usage:
-  video_to_apparences.py <video_path> <seq_path> [--test_frac=<tf>] [--query_frac=<qf>] [--query_prob=<qp>] [--imgsz=<is>] [--sampling_rate=<sr>]
+  video_to_oriented_apparences.py <video_path> <seq_path> [--test_frac=<tf>] [--query_frac=<qf>] [--query_prob=<qp>] [--crop_h=<ch>] [--crop_w=<cw>] [--sampling_rate=<sr>] [--reshape | --pad_reshape]
 
 Options:
   --test_frac=<tf>          The fraction of identities used for testing. [default: 0.5]
   --query_frac=<qf>         The fraction of test identities used for the query set. [default: 0.8]
   --query_prob=<qp>         The probability of putting images into the query set instead of the test set after both sets have 3 images. [default: 0.1]
-  --imgsz=<is>              Image size [default: 64]
+  --crop_h=<ch>             Identity crop height size [default: 64]
+  --crop_w=<cw>             Identity crop width size [default: 32]
   --sampling_rate=<sr>      Sampling rate [default: 5]
+  --reshape                 Reshape into size instead of crop and pad.
+  --pad_reshape             Pad small size until he big size and then reshape into size in stead of crop and pad.
 """
 
 if __name__ == "__main__":
@@ -104,8 +145,11 @@ if __name__ == "__main__":
     test_frac = float(args['--test_frac'])
     query_frac = float(args['--query_frac'])
     query_prob = float(args['--query_prob'])
-    imgsz = int(args['--imgsz'])
+    crop_h = int(args['--crop_h'])
+    crop_w = int(args['--crop_w'])
     sampling_rate = int(args['--sampling_rate'])
+    reshape = args['--reshape']
+    pad_reshape = args['--pad_reshape']
 
     output_file = "Market-1501-v15.09.15"
     train_dir = os.path.join(output_file, output_file, 'bounding_box_train')
@@ -166,26 +210,12 @@ if __name__ == "__main__":
 
                 crop = frame[bbox[1] : bbox[1] + bbox[3], bbox[0] : bbox[0] + bbox[2], :].copy()
 
-                h = bbox[3]
-                w = bbox[2]
-                
-                if h > imgsz:
-                    excess = h - imgsz
-                    crop = crop[excess // 2 : excess // 2 + imgsz, :, :]
-                    h = imgsz
-                
-                if w > imgsz:
-                    excess = w - imgsz
-                    crop = crop[:, excess // 2 : excess // 2 + imgsz, :]
-                    w = imgsz
-                
-                if h < imgsz or w < imgsz:
-                    pad_h = (imgsz - h) // 2
-                    pad_w = (imgsz - w) // 2
-                    pad = ((pad_h, imgsz - h - pad_h), (pad_w, imgsz - w - pad_w))
-                    pad_color = np.median(crop, axis=(0, 1))
-                    
-                    crop = np.stack([np.pad(crop[:, :, c], pad, mode='constant', constant_values=pad_color[c]) for c in range(3)], axis=2)
+                if reshape:
+                    crop = cv.resize(crop, (imgsz, imgsz), interpolation=cv.INTER_AREA)
+                elif pad_reshape:
+                    crop = pad_reshape(bbox, imgsz)
+                else:
+                    crop = crop_pad(bbox, imgsz)
                 
                 if crop.shape[0] != imgsz or crop.shape[1] != imgsz:
                     continue
