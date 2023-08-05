@@ -21,22 +21,19 @@ metric:
   goal: maximize
 
 parameters:
-  OUTPUT_DIR:
-    value: runs/apparence/train
+
+  SOLVER.CHECKPOINT_PERIOD:
+    value: 1400
 
   INPUT.SIZE_TRAIN:
     value: "(64, 64)"
   INPUT.SIZE_TEST:
     value: "(64, 64)"
 
-  SOLVER.CHECKPOINT_PERIOD:
-    value: 1400
-  
-
-  DATALOADER.SAMPLER_TRAIN:
-    value: NaiveIdentitySampler
   DATALOADER.NUM_INSTANCE:
     value: 4
+  DATALOADER.NUM_WORKERS:
+    value: 8
 
   INPUT.AFFINE.ENABLED:
     value: True
@@ -78,44 +75,11 @@ parameters:
     min: 0.0
     max: 1
 
-  INPUT.CROP.ENABLED:
-    value: False
-  INPUT.CROP.RATIO:
-    value: "(0., 1.)"
-  INPUT.CROP.SCALE:
-    value: "(0., 1)"
-  INPUT.CROP.SIZE:
-    value: "(64, 64)"
-
   INPUT.FLIP.ENABLED:
-    value: True
+    values: [True, False]
   INPUT.FLIP.PROB:
     value: 0.5
 
-  INPUT.PADDING.ENABLED:
-    value: True
-  INPUT.PADDING.MODE:
-    value: "constant"
-  INPUT.PADDING.SIZE:
-    distribution: int_uniform
-    min: 1
-    max: 10
-
-  INPUT.REA.ENABLED:
-    value: True
-  INPUT.REA.PROB:
-    distribution: uniform
-    min: 0.0
-    max: 1
-  INPUT.REA.VALUE:
-    value: "(123.675, 116.28, 103.53)"
-
-  INPUT.RPT.ENABLED:
-    value: True
-  INPUT.RPT.PROB:
-    distribution: uniform
-    min: 0.0
-    max: 1
 
   MODEL.LOSSES.CE.ALPHA:
     value: 0.2
@@ -135,16 +99,8 @@ parameters:
   MODEL.LOSSES.TRI.SCALE:
     value: 1.0
 
-  MODEL.PIXEL_MEAN:
-    value: "(123.675, 116.28, 103.53)"
-  MODEL.PIXEL_STD:
-    value: "(58.395, 57.12, 57.375)"
-
   MODEL.QUEUE_SIZE:
     value: 8192
-
-  SOLVER.AMP.ENABLED:
-    value: False
 
   SOLVER.MAX_EPOCH:
     value: 1440
@@ -186,9 +142,6 @@ parameters:
     max: 0.95
     min: 0.9
 
-  SOLVER.NESTEROV:
-    value: False
-
   SOLVER.OPT:
     values: ["Adam", "SGD"]
 
@@ -210,12 +163,34 @@ parameters:
     value: 0.0005
   SOLVER.WEIGHT_DECAY_NORM:
     value: 0.0005
-  
-  TEST.FLIP.ENABLED:
-    value: False
-  
-  TEST.ROC.ENABLED:
-    value: False
+
 
   TEST.IMS_PER_BATCH:
     value: 128
+
+
+  DATALOADER.SAMPLER_TRAIN:
+    value: NaiveIdentitySampler
+  OUTPUT_DIR:
+    value: runs/apparence/train
+  INPUT.CROP.ENABLED:
+    value: False
+  INPUT.PADDING.ENABLED:
+    value: False
+  INPUT.REA.ENABLED:
+    value: False
+  INPUT.RPT.ENABLED:
+    value: False
+  SOLVER.AMP.ENABLED:
+    value: False
+  TEST.FLIP.ENABLED:
+    value: False
+  TEST.ROC.ENABLED:
+    value: False
+  SOLVER.NESTEROV:
+    value: False
+
+  MODEL.PIXEL_MEAN:
+    value: "(123.675, 116.28, 103.53)"
+  MODEL.PIXEL_STD:
+    value: "(58.395, 57.12, 57.375)"
