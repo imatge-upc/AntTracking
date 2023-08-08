@@ -35,19 +35,9 @@ parameters:
   DATALOADER.NUM_WORKERS:
     value: 8
 
-  INPUT.AFFINE.ENABLED:
-    value: True
-
   INPUT.AUGMIX.ENABLED:
     value: True
   INPUT.AUGMIX.PROB:
-    distribution: uniform
-    min: 0.0
-    max: 1
-
-  INPUT.AUTOAUG.ENABLED:
-    value: True
-  INPUT.AUTOAUG.PROB:
     distribution: uniform
     min: 0.0
     max: 1
@@ -61,25 +51,31 @@ parameters:
   INPUT.CJ.BRIGHTNESS:
     distribution: uniform
     min: 0.0
-    max: 1
+    max: 2
   INPUT.CJ.CONTRAST:
     distribution: uniform
     min: 0.0
-    max: 1
+    max: 2
   INPUT.CJ.HUE:
     distribution: uniform
     min: 0.0
-    max: 1
+    max: 0.5
   INPUT.CJ.SATURATION:
     distribution: uniform
     min: 0.0
-    max: 1
+    max: 2
 
   INPUT.FLIP.ENABLED:
     values: [True, False]
   INPUT.FLIP.PROB:
     value: 0.5
 
+  INPUT.ROTATION.ENABLED:
+    values: [True, False]
+  INPUT.ROTATION.DEGREES:
+    distribution: int_uniform
+    min: 0
+    max: 180
 
   MODEL.LOSSES.CE.ALPHA:
     value: 0.2
@@ -180,6 +176,10 @@ parameters:
   INPUT.REA.ENABLED:
     value: False
   INPUT.RPT.ENABLED:
+    value: False
+  INPUT.AFFINE.ENABLED:
+    value: False
+  INPUT.AUTOAUG.ENABLED:
     value: False
   SOLVER.AMP.ENABLED:
     value: False
