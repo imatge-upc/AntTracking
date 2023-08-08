@@ -67,7 +67,7 @@ def nms_priority(prioDets, auxDets):
     prio_df = pd.DataFrame(prioDets[:, 0], columns=['frame'])
     prio_df['bboxes'] = prioDets[:, 2:6].tolist()
     aux_df = pd.DataFrame(auxDets[:, 0], columns=['frame'])
-    aux_df['bboxes'] = aux_df[:, 2:6].tolist()
+    aux_df['bboxes'] = auxDets[:, 2:6].tolist()
 
     prio_serie = prio_df.groupby(by='frame').apply(lambda x : np.vstack(x['bboxes']))
     prio_serie.name = 'prio'
