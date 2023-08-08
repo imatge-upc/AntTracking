@@ -205,7 +205,7 @@ if __name__ == '__main__':
                 cv.imwrite(os.path.join(maybe_fn_imgs_path, filename), frame)
             
             elif frame_id in maybe_fp or frame_id in true_fp:
-                bboxes = prioDets[prioDets[:, 0] == frame_id, :]
+                bboxes = prioDets[prioDets[:, 0] == frame_id, :].astype(int)
                 labels = '\n'.join([' '.join(mot2yolo(trk)) for trk in bboxes])
 
                 for i, bbox in enumerate(bboxes):
