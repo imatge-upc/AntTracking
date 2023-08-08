@@ -170,8 +170,8 @@ if __name__ == '__main__':
         for i, frame_id in enumerate(indices_ok[::sampling_rate]):
             capture.set(cv.CAP_PROP_POS_FRAMES, frame_id - 1)
 
-            if i % 100 == 0:
-                print(f'{frame_id} / {nframes}')
+            if i % 50 == 0 or i == 10 or i == 25:
+                print(f'{i} / {len(indices_ok[::sampling_rate])}: Processing frame {frame_id} / {nframes}')
 
             _, frame = capture.read()
             if frame is None:
