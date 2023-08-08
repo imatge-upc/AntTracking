@@ -20,7 +20,8 @@ if __name__ == '__main__':
     seg_path = args['<seg_path>']
     out_path = args['<out_path>']
 
-    seq_dets = np.loadtxt(seq_path, delimiter=',')
+    #seq_dets = np.loadtxt(seq_path, delimiter=',')
+    seq_dets = pd.read_csv(seq_path, header=0, names=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'conf','b','c', 'd'])
 
     table = pd.read_csv(seg_path, sep='\t', names=['ini', 'fin', 'out'])
     table['out'] = table['out'].apply(json.loads)
@@ -32,5 +33,8 @@ if __name__ == '__main__':
     indices_nok = pd.DataFrame(outs, columns=['ini', 'fin']).apply(lambda x : np.arange(x['ini'], x['fin'] + 1), axis=1)
     indices_nok = np.hstack(indices_nok)
 
-    seq_dets = seq_dets[np.isin(seq_dets[:, 0], indices_ok) & ~np.isin(seq_dets[:, 0], indices_nok), :]
-    np.savetxt(out_path, seq_dets.astype(int), fmt='%i', delimiter=',')
+    #seq_dets = seq_dets[np.isin(seq_dets[:, 0], indices_ok) & ~np.isin(seq_dets[:, 0], indices_nok), :]
+    #np.savetxt(out_path, seq_dets.astype(int), fmt='%i', delimiter=',')
+
+    seq_dets = seq_dets.loc[np.isin(seq_dets[:, 0], indices_ok) & ~np.isin(seq_dets[:, 0], indices_nok), :]
+    seq_dets.to_csv(out_path, index=False, header=False)
