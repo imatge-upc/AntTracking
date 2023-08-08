@@ -36,5 +36,5 @@ if __name__ == '__main__':
     #seq_dets = seq_dets[np.isin(seq_dets[:, 0], indices_ok) & ~np.isin(seq_dets[:, 0], indices_nok), :]
     #np.savetxt(out_path, seq_dets.astype(int), fmt='%i', delimiter=',')
 
-    seq_dets = seq_dets.loc[np.isin(seq_dets.loc[:, 0], indices_ok) & ~np.isin(seq_dets.loc[:, 0], indices_nok), :]
+    seq_dets = seq_dets.loc[np.isin(seq_dets.iloc[:, 0], indices_ok) & ~np.isin(seq_dets.iloc[:, 0], indices_nok), :]
     seq_dets.to_csv(out_path, index=False, header=False)
