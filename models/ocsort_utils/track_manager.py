@@ -124,7 +124,7 @@ class TrackManager():
 
             # Prepare output from active tracks
             if self.chk_output(trk):
-                output.append(np.concatenate((pred_out[..., :4].reshape(-1), [trk.id])).reshape(1, -1))
+                output.append(np.concatenate((pred_out[..., :4].reshape(-1), [trk.id, pred_out[..., 4]])).reshape(1, -1))
         
         # Make a mirror VIEW of unmatched_estimations so the sorting is descending in the actual unmatched_estimations, so pop won't mess the indexes
         unmatched_estimations[::-1].sort()
@@ -141,7 +141,7 @@ class TrackManager():
                 pred_out = trk.update(None) # Freeze, pred_out = previous estimation (== pred)
 
                 if self.chk_output(trk):
-                    output.append(np.concatenate((pred_out[..., :4].reshape(-1), [trk.id])).reshape(1, -1))
+                    output.append(np.concatenate((pred_out[..., :4].reshape(-1), [trk.id, pred_out[..., 4]])).reshape(1, -1))
 
         # Create new Tracks and Prepare output if needed
         for i_det in unmatched_detections:
@@ -152,13 +152,13 @@ class TrackManager():
                 self.trackers.append(trk)
 
                 if self.chk_output(trk):
-                    output.append(np.concatenate((det[:4], [trk.id])).reshape(1, -1))
+                    output.append(np.concatenate((det[:4], [trk.id, det[..., 4]])).reshape(1, -1))
 
         #print(f'{len(self.trackers)}, {len(output)}')
 
         if len(output) > 0:
             return np.concatenate(output)
-        return np.empty((0, 5))
+        return np.empty((0, 6))
 
     __getitem__ = get_track
     __call__ = manage_tracks

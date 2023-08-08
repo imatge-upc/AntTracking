@@ -97,7 +97,8 @@ if __name__ == '__main__':
         for t in online_targets:
             tlwh = [t[0], t[1], t[2] - t[0], t[3] - t[1]]
             tid = int(t[4])
-            results.append(f"{frame},{tid},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},1.0,-1,-1,-1\n")
+            conf = t[5]
+            results.append(f"{frame},{tid},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},{conf:.2f},-1,-1,-1\n")
 
     with open(os.path.join('OUTPUT', tracking_file), 'w') as f:
         f.writelines(results)
