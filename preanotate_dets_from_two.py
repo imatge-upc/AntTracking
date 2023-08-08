@@ -159,14 +159,19 @@ if __name__ == '__main__':
     os.makedirs(maybe_fp_crops_path)
 
     with VideoCapture(videoFile) as capture:
+
+        nframes = int(capture.get(cv.CAP_PROP_FRAME_COUNT))
         
         width  = capture.get(cv.CAP_PROP_FRAME_WIDTH)
         height = capture.get(cv.CAP_PROP_FRAME_HEIGHT)
 
         mot2yolo = lambda trk : ['0', f'{(trk[2] + (trk[4] / 2)) / width}', f'{(trk[3] + (trk[5] / 2)) / height}', f'{trk[4] / width}', f'{trk[5] / height}']
 
-        for frame_id in indices_ok[::sampling_rate]:
+        for i, frame_id in enumerate(indices_ok[::sampling_rate]):
             capture.set(cv.CAP_PROP_POS_FRAMES, frame_id - 1)
+
+            if i % 100 == 0:
+                print(f'{frame_id} / {nframes}')
 
             _, frame = capture.read()
             if frame is None:
@@ -183,7 +188,7 @@ if __name__ == '__main__':
                 for i, bbox in enumerate(bboxes):
                     crop_filename = f'{frame_id:06}_{i:02}.txt'
 
-                    crop = frame[:, bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4]].numpy()
+                    crop = frame[:, bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4]]
                     crop = np.moveaxis(crop, [0, 1, 2], [2, 0, 1])
 
                     cv.imwrite(os.path.join(maybe_tp_crops_path, crop_filename), crop)
@@ -202,7 +207,7 @@ if __name__ == '__main__':
                 for i, bbox in enumerate(bboxes):
                     crop_filename = f'{frame_id:06}_{i:02}.txt'
 
-                    crop = frame[:, bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4]].numpy()
+                    crop = frame[:, bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4]]
                     crop = np.moveaxis(crop, [0, 1, 2], [2, 0, 1])
 
                     cv.imwrite(os.path.join(maybe_fp_crops_path, crop_filename), crop)
