@@ -177,7 +177,7 @@ if __name__ == '__main__':
             labels_filename = f'{frame_id:06}.txt'
             
             if frame_id in maybe_tp:
-                bboxes = prioDets[prioDets[:, 0] == frame_id, :]
+                bboxes = prioDets[prioDets[:, 0] == frame_id, :].astype(int)
                 labels = '\n'.join([' '.join(mot2yolo(trk)) for trk in bboxes])
 
                 for i, bbox in enumerate(bboxes):
