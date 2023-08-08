@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
             i += 1
             if i % 100 == 0:
-                print(f'{i} / nframes')
+                print(f'{i} / {nframes}')
 
             psum = frame.sum(axis=(0, 1))
             psum_sq = (frame ** 2).sum(axis=(0, 1))
