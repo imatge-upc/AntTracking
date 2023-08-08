@@ -37,11 +37,8 @@ class PrecomputedMOTTracker():
 
         self.last_frame = int(self.seq_dets[:, 0].max())
 
-        sampling_mask = np.in1d(self.seq_dets[:, 0], np.arange(1, self.last_frame, sampling_rate, dtype=int))
-        self.seq_dets = self.seq_dets[sampling_mask, :]
-
         # Considering we use ground truth tracks, so all the identities are well annotated. We discard bboxes that may have more than 1 identity.
-        for fr in range(1, int(self.seq_dets[:, 0].max())):
+        for fr in range(1, self.last_frame):
 
             if verbose and (fr % 500 == 0):
                 print (f'\tPreprocessing frame {fr}', file=sys.stderr)
@@ -72,54 +69,99 @@ class PrecomputedMOTTracker():
     
     def __call__(self, frame):
 
-        if self.verbose and (self.current_frame % 500 == 0):
-            print (f'Processing frame {self.current_frame}', file=sys.stderr)
+        if self.verbose and (frame % 500 == 0):
+            print (f'Processing frame {frame}', file=sys.stderr)
 
-        tcks = self.seq_dets[self.seq_dets[:, 0] == self.current_frame, :]
+        tcks = self.seq_dets[self.seq_dets[:, 0] == frame, :]
 
         self.current_frame += 1
 
         return tcks
 
-def crop_pad(bbox, imgsz):
+def crop_pad(bbox, crop_w, crop_h):
 
     h = bbox[3]
     w = bbox[2]
     
-    if h > imgsz:
-        excess = h - imgsz
-        crop = crop[excess // 2 : excess // 2 + imgsz, :, :]
-        h = imgsz
+    if h > crop_h:
+        excess = h - crop_h
+        crop = crop[excess // 2 : excess // 2 + crop_h, :, :]
+        h = crop_h
     
-    if w > imgsz:
-        excess = w - imgsz
-        crop = crop[:, excess // 2 : excess // 2 + imgsz, :]
-        w = imgsz
+    if w > crop_w:
+        excess = w - crop_w
+        crop = crop[:, excess // 2 : excess // 2 + crop_w, :]
+        w = crop_w
     
-    if h < imgsz or w < imgsz:
-        pad_h = (imgsz - h) // 2
-        pad_w = (imgsz - w) // 2
-        pad = ((pad_h, imgsz - h - pad_h), (pad_w, imgsz - w - pad_w))
+    if h < crop_h or w < crop_w:
+        pad_h = (crop_h - h) // 2
+        pad_w = (crop_w - w) // 2
+        pad = ((pad_h, crop_h - h - pad_h), (pad_w, crop_w - w - pad_w))
         pad_color = np.median(crop, axis=(0, 1))
         
         crop = np.stack([np.pad(crop[:, :, c], pad, mode='constant', constant_values=pad_color[c]) for c in range(3)], axis=2)
     
     return crop
 
-def pad_reshape(bbox, imgsz):
+def pad_reshape(bbox, crop_w, crop_h):
 
     h = bbox[3]
     w = bbox[2]
+
+    ar = crop_h / crop_w
     
-    pad = (max(h, w) - min(h, w)) // 2
-    pad = ((pad, max(h, w) - h - pad), (0, 0)) if h < w else ((0, 0), (pad, max(h, w) - w - pad))
+    pad_h = (w * ar - h) // 2
+    pad_w = (h / ar - w) // 2
+    pad = ((pad_h, w * ar - h - pad_h), (0, 0)) if h < w * ar else ((0, 0), (pad_w, h / ar - w - pad_w))
     pad_color = np.median(crop, axis=(0, 1))
     
     crop = np.stack([np.pad(crop[:, :, c], pad, mode='constant', constant_values=pad_color[c]) for c in range(3)], axis=2)
     
-    crop = cv.resize(crop, (imgsz, imgsz), interpolation=cv.INTER_AREA)
+    crop = cv.resize(crop, (crop_w, crop_h), interpolation=cv.INTER_AREA)
     
     return crop
+
+def rotate(image, angle, center=None, scale=1.0):
+    (h, w) = image.shape[:2]
+
+    if center is None:
+        center = (w / 2, h / 2)
+
+    # Perform the rotation
+    M = cv.getRotationMatrix2D(center, angle, scale)
+    rotated = cv.warpAffine(image, M, (w, h))
+
+    return rotated, M
+
+def crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_size=20):
+    gray_crop = gray_frame[bbox[1] : bbox[1] + bbox[3], bbox[0] : bbox[0] + bbox[2]]
+    pts = np.argwhere(gray_crop < background_th).reshape(-1, 2).astype(np.float32)
+
+    if len(pts) < min_size : return 0
+
+    mean = np.empty((0))
+    _, eigenvectors, _ = cv.PCACompute2(pts, mean)
+
+    pca_angle_ori = np.arctan2(eigenvectors[0, 1], eigenvectors[0, 0])
+
+    cntr = bbox[:2] + bbox[2:4] / 2
+    post_cntr = post_bbox[:2] + post_bbox[2:4] / 2
+    module = np.linalg.norm(post_cntr - cntr)
+    angle = np.pi / 2 - np.arccos((post_cntr - cntr)[0] / module) * (1. if (post_cntr - cntr)[1] >= 0 else -1.)
+
+    angle_dist = min(np.abs(angle - pca_angle_ori), 2 * np.pi - np.abs(angle - pca_angle_ori))
+    pca_angle = pca_angle_ori if (2 * angle_dist) < np.pi else pca_angle_ori - np.pi
+
+    rot_frame, M = rotate(frame, np.rad2deg(pca_angle), (int(cntr[1]), int(cntr[0])))
+
+    origin = np.dot(bbox[:2] - cntr, M).astype(int)[:2] + cntr
+    deltas = bbox[2:4] * np.abs(np.cos(pca_angle)) + bbox[4:2:-1] * np.abs(np.sin(pca_angle))
+    w, h = deltas.astype(int)
+
+    crop = rot_frame[int(origin[1]) : int(origin[1]) + h, int(origin[0]) : int(origin[0]) + w, :]
+
+    return crop
+
 
     
 DOCTEXT = f"""
@@ -192,9 +234,10 @@ if __name__ == "__main__":
 
     wrong = 0
     with VideoCapture(video_path) as capture:
-        for fr in range(1, tracker.last_frame):
+        for fr in range(1, tracker.last_frame - 1):
 
             tracks = tracker(fr)
+            post_tracks = tracker(fr + 1)
             if len(tracks) == 0:
                 continue
 
@@ -204,20 +247,27 @@ if __name__ == "__main__":
                 print (f'Frame {fr} is None')
                 break
 
+            gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+            background_th = np.mean(gray_frame) * 0.5
+
             for tck in tracks:
                 bbox = tck[2:6].astype(int)
                 id_ = tck[1].astype(int)
 
-                crop = frame[bbox[1] : bbox[1] + bbox[3], bbox[0] : bbox[0] + bbox[2], :].copy()
+                if tck[1] not in post_tracks[:, 1]:
+                    continue
+
+                post_bbox = post_tracks[post_tracks[:, 1] == tck[1], 2:6].squeeze()
+                crop = crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_size=20)
 
                 if reshape:
-                    crop = cv.resize(crop, (imgsz, imgsz), interpolation=cv.INTER_AREA)
+                    crop = cv.resize(crop, (crop_w, crop_h), interpolation=cv.INTER_AREA)
                 elif pad_reshape:
-                    crop = pad_reshape(bbox, imgsz)
+                    crop = pad_reshape(bbox, crop_w, crop_h)
                 else:
-                    crop = crop_pad(bbox, imgsz)
+                    crop = crop_pad(bbox, crop_w, crop_h)
                 
-                if crop.shape[0] != imgsz or crop.shape[1] != imgsz:
+                if crop.shape[0] != crop_h or crop.shape[1] != crop_w:
                     continue
 
                 if id_ in train_ids: # train set
