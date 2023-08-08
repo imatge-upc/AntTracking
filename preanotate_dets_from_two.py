@@ -190,8 +190,12 @@ if __name__ == '__main__':
 
                     crop = frame[:, bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4]]
                     crop = np.moveaxis(crop, [0, 1, 2], [2, 0, 1])
-
-                    cv.imwrite(os.path.join(maybe_tp_crops_path, crop_filename), crop)
+                    
+                    try:
+                        # If it is empty, it raise cv2.error but if it is not saved, it is like a human discard it later
+                        cv.imwrite(os.path.join(maybe_tp_crops_path, crop_filename), crop)
+                    except:
+                        pass
                 
                 cv.imwrite(os.path.join(maybe_tp_imgs_path, filename), frame)
                 with open(os.path.join(maybe_tp_labels_path, labels_filename), 'w') as f:
@@ -210,7 +214,11 @@ if __name__ == '__main__':
                     crop = frame[:, bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4]]
                     crop = np.moveaxis(crop, [0, 1, 2], [2, 0, 1])
 
-                    cv.imwrite(os.path.join(maybe_fp_crops_path, crop_filename), crop)
+                    try:
+                        # If it is empty, it raise cv2.error but if it is not saved, it is like a human discard it later
+                        cv.imwrite(os.path.join(maybe_fp_crops_path, crop_filename), crop)
+                    except:
+                        pass
                 
                 cv.imwrite(os.path.join(maybe_fp_imgs_path, filename), frame)
                 with open(os.path.join(maybe_fp_labels_path, labels_filename), 'w') as f:
