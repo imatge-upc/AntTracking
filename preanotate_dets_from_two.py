@@ -90,7 +90,7 @@ def nms_priority(prioDets, auxDets):
     for frame_id in maybe_fn:
         iou_matrix = nms_df.loc[frame_id, 'IoU']
         prio_bboxes = prioDets[prioDets[:, 0] == frame_id, :]
-        aux_mask = (iou_matrix == 0).all(axis=0).any()
+        aux_mask = (iou_matrix == 0).all(axis=0).flatten()
         aux_bboxes = auxDets[auxDets[:, 0] == frame_id, :][aux_mask, :]
         fnNMSDets = np.concatenate((fnNMSDets, prio_bboxes, aux_bboxes), axis=0)
 
@@ -159,7 +159,8 @@ if __name__ == '__main__':
     maybe_tp = maybe_tp[~np.isin(maybe_tp, true_fp)]
 
     os.makedirs(outPath, exist_ok=False)
-    os.makedirs(maybe_tp_frame_list_path)
+
+    os.makedirs(os.path.dirname(maybe_tp_frame_list_path))
     os.makedirs(maybe_tp_labels_path)
     os.makedirs(maybe_tp_crops_path)
     
@@ -167,7 +168,7 @@ if __name__ == '__main__':
     os.makedirs(maybe_fn_labels_path)
     os.makedirs(maybe_fn_crops_path)
     
-    os.makedirs(maybe_fp_frame_list_path)
+    os.makedirs(os.path.dirname(maybe_fp_frame_list_path))
     os.makedirs(maybe_fp_labels_path)
     os.makedirs(maybe_fp_crops_path)
 
