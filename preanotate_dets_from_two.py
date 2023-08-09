@@ -156,9 +156,7 @@ if __name__ == '__main__':
     else:
         true_fp = np.empty((0))
 
-    maybe_tp = maybe_tp[~np.isin(maybe_tp, true_fp)]
-
-    indices_ok = indices_ok[np.isin(indices_ok, maybe_tp) | np.isin(indices_ok, maybe_fp) | np.isin(indices_ok, maybe_fn) | np.isin(indices_ok, true_fp) | np.isin(indices_ok, true_fn)]
+    maybe_tp = maybe_tp[~np.isin(maybe_tp, true_fp) & ~np.isin(maybe_tp, true_fn)]
 
     os.makedirs(outPath, exist_ok=False)
 
