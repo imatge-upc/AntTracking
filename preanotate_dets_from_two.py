@@ -200,7 +200,7 @@ if __name__ == '__main__':
                 labels = '\n'.join([' '.join(mot2yolo(trk)) for trk in bboxes])
 
                 for i, bbox in enumerate(bboxes):
-                    crop_filename = f'{frame_id:06}_{i:02}.txt'
+                    crop_filename = f'{frame_id:06}_{i:02}.png'
 
                     crop = frame[bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4], :]
                     
@@ -221,7 +221,7 @@ if __name__ == '__main__':
                 labels = '\n'.join([' '.join(mot2yolo(trk)) for trk in bboxes])
 
                 for i, bbox in enumerate(bboxes):
-                    crop_filename = f'{frame_id:06}_{i:02}.txt'
+                    crop_filename = f'{frame_id:06}_{i:02}.png'
 
                     crop = frame[bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4], :]
                     
@@ -240,7 +240,7 @@ if __name__ == '__main__':
                 labels = '\n'.join([' '.join(mot2yolo(trk)) for trk in bboxes])
 
                 for i, bbox in enumerate(bboxes):
-                    crop_filename = f'{frame_id:06}_{i:02}.txt'
+                    crop_filename = f'{frame_id:06}_{i:02}.png'
 
                     crop = frame[bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4], :]
 
