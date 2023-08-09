@@ -32,7 +32,7 @@ def yaml_load(file='data.yaml', append_filename=False):
 
 DOCTEXT = f"""
 Usage:
-  crop_ultralytics_to_validable.py <data_path> [--imgsz=<is>]
+  ultralytics_to_validable.py <data_path> [--imgsz=<is>]
 
 Options:
   --imgsz=<is>              Image size [default: 640]

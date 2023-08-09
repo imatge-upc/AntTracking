@@ -78,14 +78,23 @@ def nms_priority(prioDets, auxDets):
     nms_df['IoU'] = nms_df.apply(lambda x : compute_iou(x['prio'], x['aux']) if x.notnull().all() else np.empty((0, 0)), axis=1)
 
     nms_df['FN'] = nms_df.apply(lambda x : (x['IoU'] == 0).all(axis=0).any(), axis=1)
-    nms_df['FP'] = nms_df.apply(lambda x : (x['IoU'] == 0).all(axis=1).any(), axis=1)
+    nms_df['FP'] = nms_df.apply(lambda x : (x['IoU'] == 0).all(axis=1).any(), axis=1) & ~nms_df['FN']
     nms_df['TP'] = ~nms_df['FN'] & ~nms_df['FP']
 
     maybe_fn = nms_df.index.values[nms_df['FN']]
     maybe_fp = nms_df.index.values[nms_df['FP']]
     maybe_tp = nms_df.index.values[nms_df['TP']]
 
-    return maybe_tp, maybe_fn, maybe_fp
+    # TODO: for maybe_fn add output bboxes with true nms (aka both bboxes)
+    fnNMSDets = np.empty((0, 10))
+    for frame_id in maybe_fn:
+        iou_matrix = nms_df.loc[frame_id, 'IoU']
+        prio_bboxes = prioDets[prioDets[:, 0] == frame_id, :]
+        aux_mask = (iou_matrix == 0).all(axis=0).any()
+        aux_bboxes = auxDets[auxDets[:, 0] == frame_id, :][aux_mask, :]
+        fnNMSDets = np.concatenate((fnNMSDets, prio_bboxes, aux_bboxes), axis=0)
+
+    return fnNMSDets, maybe_tp, maybe_fn, maybe_fp
 
 def empty_where_there_should_be(prioDets, indices_ok):
     true_fn = indices_ok[~np.isin(indices_ok, prioDets[:, 0])]
@@ -118,21 +127,22 @@ if __name__ == '__main__':
     onePerFrame = strtobool(args['--onePerFrame'])
     sampling_rate = int(args['--sampling_rate'])
 
-    maybe_tp_imgs_path = os.path.join(outPath, 'maybe_tp', 'images')
+    maybe_tp_frame_list_path = os.path.join(outPath, 'maybe_tp', 'maybe_tp.txt')
     maybe_tp_labels_path = os.path.join(outPath, 'maybe_tp', 'labels')
     maybe_tp_crops_path = os.path.join(outPath, 'maybe_tp', 'crops')
 
     maybe_fn_imgs_path = os.path.join(outPath, 'maybe_fn', 'images')
-    maybe_fn_labels_path = os.path.join(outPath, 'maybe_fn', 'labels') #NOTE: created but empty
+    maybe_fn_labels_path = os.path.join(outPath, 'maybe_fn', 'labels')
+    maybe_fn_crops_path = os.path.join(outPath, 'maybe_fn', 'crops')
 
-    maybe_fp_imgs_path = os.path.join(outPath, 'maybe_fp', 'images')
+    maybe_fp_frame_list_path = os.path.join(outPath, 'maybe_fp', 'maybe_fp.txt')
     maybe_fp_labels_path = os.path.join(outPath, 'maybe_fp', 'labels')
     maybe_fp_crops_path = os.path.join(outPath, 'maybe_fp', 'crops')
 
     prioDets = np.loadtxt(prioDetFile, delimiter=',')
     auxDets = np.loadtxt(auxDetFile, delimiter=',')
 
-    maybe_tp, maybe_fn, maybe_fp = nms_priority(prioDets, auxDets)
+    fnNMSDets, maybe_tp, maybe_fn, maybe_fp = nms_priority(prioDets, auxDets)
 
     if validFramesFile:
         indices_ok = valid_frames(validFramesFile)
@@ -149,12 +159,15 @@ if __name__ == '__main__':
     maybe_tp = maybe_tp[~np.isin(maybe_tp, true_fp)]
 
     os.makedirs(outPath, exist_ok=False)
-    os.makedirs(maybe_tp_imgs_path)
+    os.makedirs(maybe_tp_frame_list_path)
     os.makedirs(maybe_tp_labels_path)
     os.makedirs(maybe_tp_crops_path)
+    
     os.makedirs(maybe_fn_imgs_path)
     os.makedirs(maybe_fn_labels_path)
-    os.makedirs(maybe_fp_imgs_path)
+    os.makedirs(maybe_fn_crops_path)
+    
+    os.makedirs(maybe_fp_frame_list_path)
     os.makedirs(maybe_fp_labels_path)
     os.makedirs(maybe_fp_crops_path)
 
@@ -181,15 +194,14 @@ if __name__ == '__main__':
             filename = f'{frame_id:06}.png'
             labels_filename = f'{frame_id:06}.txt'
             
-            if frame_id in maybe_tp:
+            if frame_id in maybe_tp: # We can be sure when there is only one ant per frame and the crops are validated manually
                 bboxes = prioDets[prioDets[:, 0] == frame_id, :].astype(int)
                 labels = '\n'.join([' '.join(mot2yolo(trk)) for trk in bboxes])
 
                 for i, bbox in enumerate(bboxes):
                     crop_filename = f'{frame_id:06}_{i:02}.txt'
 
-                    crop = frame[:, bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4]]
-                    crop = np.moveaxis(crop, [0, 1, 2], [2, 0, 1])
+                    crop = frame[bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4], :]
                     
                     try:
                         # If it is empty, it raise cv2.error but if it is not saved, it is like a human discard it later
@@ -197,22 +209,39 @@ if __name__ == '__main__':
                     except:
                         pass
                 
-                cv.imwrite(os.path.join(maybe_tp_imgs_path, filename), frame)
+                #cv.imwrite(os.path.join(maybe_tp_imgs_path, filename), frame)
+                with open(maybe_tp_frame_list_path, 'a') as f:
+                    print(f'{int(frame_id)}', file=f)
                 with open(os.path.join(maybe_tp_labels_path, labels_filename), 'w') as f:
                     f.write(labels)
 
-            elif frame_id in maybe_fn or frame_id in true_fn:
-                cv.imwrite(os.path.join(maybe_fn_imgs_path, filename), frame)
+            elif frame_id in maybe_fn or frame_id in true_fn: # Usually prio puts better the bbox; but, if it has not put any, aux could have put it. (NMS)
+                bboxes = fnNMSDets[fnNMSDets[:, 0] == frame_id, :].astype(int)
+                labels = '\n'.join([' '.join(mot2yolo(trk)) for trk in bboxes])
+
+                for i, bbox in enumerate(bboxes):
+                    crop_filename = f'{frame_id:06}_{i:02}.txt'
+
+                    crop = frame[bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4], :]
+                    
+                    try:
+                        # If it is empty, it raise cv2.error but if it is not saved, it is like a human discard it later
+                        cv.imwrite(os.path.join(maybe_fn_crops_path, crop_filename), crop)
+                    except:
+                        pass
+
+                cv.imwrite(os.path.join(maybe_fn_imgs_path, filename), cv.resize(frame, None, fx=1/8, fy=1/8, interpolation=cv.INTER_LANCZOS4))
+                with open(os.path.join(maybe_fn_labels_path, labels_filename), 'w') as f:
+                    f.write(labels)
             
-            elif frame_id in maybe_fp or frame_id in true_fp:
+            elif frame_id in maybe_fp or frame_id in true_fp: # All aux were matched but there is at least one extra, it has to be manually deleted.
                 bboxes = prioDets[prioDets[:, 0] == frame_id, :].astype(int)
                 labels = '\n'.join([' '.join(mot2yolo(trk)) for trk in bboxes])
 
                 for i, bbox in enumerate(bboxes):
                     crop_filename = f'{frame_id:06}_{i:02}.txt'
 
-                    crop = frame[:, bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4]]
-                    crop = np.moveaxis(crop, [0, 1, 2], [2, 0, 1])
+                    crop = frame[bbox[3] : bbox[3] + bbox[5], bbox[2] : bbox[2] + bbox[4], :]
 
                     try:
                         # If it is empty, it raise cv2.error but if it is not saved, it is like a human discard it later
@@ -220,7 +249,8 @@ if __name__ == '__main__':
                     except:
                         pass
                 
-                cv.imwrite(os.path.join(maybe_fp_imgs_path, filename), frame)
+                with open(maybe_fp_frame_list_path, 'a') as f:
+                    print(f'{int(frame_id)}', file=f)
                 with open(os.path.join(maybe_fp_labels_path, labels_filename), 'w') as f:
                     f.write(labels)
   
