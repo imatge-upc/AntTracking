@@ -158,6 +158,8 @@ if __name__ == '__main__':
 
     maybe_tp = maybe_tp[~np.isin(maybe_tp, true_fp)]
 
+    indices_ok = indices_ok[np.isin(indices_ok, maybe_tp) | np.isin(indices_ok, maybe_fp) | np.isin(indices_ok, maybe_fn)]
+
     os.makedirs(outPath, exist_ok=False)
 
     os.makedirs(os.path.dirname(maybe_tp_frame_list_path))
