@@ -318,7 +318,8 @@ if __name__ == "__main__":
     os.makedirs(query_dir, exist_ok=False)
 
     seen_ids = set()
-    for video_path, seq_path in zip(video_pathes, seq_pathes):
+    for i, (video_path, seq_path) in enumerate(zip(video_pathes, seq_pathes)):
+        print(f'VIDEO {i} OF {len(video_pathes)}')
         process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, crop_w, crop_h, train_dir, query_dir, test_dir, verbose=True)
 
     shutil.make_archive(output_file, 'zip', output_file)
