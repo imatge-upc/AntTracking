@@ -181,7 +181,7 @@ if __name__ == "__main__":
     os.makedirs(train_label_dir, exist_ok=False)
     os.makedirs(val_label_dir, exist_ok=False)
 
-    for video_path, seq_path in video_pathes, seq_pathes:
+    for video_path, seq_path in zip(video_pathes, seq_pathes):
         process_video(video_path, seq_path, sampling_rate, test_frac, crop_width, crop_height, basename, val_img_dir, val_label_dir, train_img_dir, train_label_dir, verbose=True)
 
     config_text = f"""
