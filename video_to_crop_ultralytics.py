@@ -80,53 +80,16 @@ def adjust_annotations(tracks, seen, initial, final, crop_width, crop_height):
 
     return tracks_save, seen
 
+def process_video(video_path, seq_path, sampling_rate, test_frac, crop_width, crop_height, basename, val_img_dir, val_label_dir, train_img_dir, train_label_dir, verbose=True):
 
-DOCTEXT = f"""
-Usage:
-  video_to_crop_ultralytics.py <video_path> <seq_path> <output_file> [--test_frac=<tf>] [--sampling_rate=<sr>] [--width=<w>] [--height=<h>]
-
-Options:
-  --test_frac=<tf>          The fraction of frames used for testing. [default: 0.3]
-  --sampling_rate=<sr>      Number of frames skipped between saved images. [default: 2]
-  --width=<w>               Width of the crop. [default: 640]
-  --height=<h>              Height of the crop. [default: 640]
-
-"""
-
-if __name__ == "__main__":
-
-    args = docopt(DOCTEXT, argv=sys.argv[1:], help=True, version=None, options_first=False)
-    video_path = args['<video_path>']
-    seq_path = args['<seq_path>']
-    output_file = args['<output_file>']
-
-    test_frac = float(args['--test_frac'])
-    sampling_rate = int(args['--sampling_rate'])
-
-    crop_width = int(args['--width'])
-    crop_height = int(args['--height'])
-
-    basename = os.path.basename(output_file)
-    yolo_config_dir = os.path.join(output_file, basename)
-    train_img_dir = os.path.join(output_file, basename, 'images', 'train')
-    val_img_dir = os.path.join(output_file, basename, 'images', 'val')
-    train_label_dir = os.path.join(output_file, basename, 'labels', 'train')
-    val_label_dir = os.path.join(output_file, basename, 'labels', 'val')
-
-    tracker = PrecomputedMOTTracker(seq_path, verbose=True)
+    tracker = PrecomputedMOTTracker(seq_path, verbose=verbose)
     #save_frames = np.arange(1, tracker.last_frame, sampling_rate, dtype=int)
     save_frames = np.unique(tracker.seq_dets[:, 0])[::sampling_rate].astype(int)
 
     valid_frames = save_frames.copy()
     #np.random.shuffle(valid_frames)
     valid_frames = valid_frames[: int(len(valid_frames) * test_frac)]
-
-    os.makedirs(yolo_config_dir, exist_ok=False)
-    os.makedirs(train_img_dir, exist_ok=False)
-    os.makedirs(val_img_dir, exist_ok=False)
-    os.makedirs(train_label_dir, exist_ok=False)
-    os.makedirs(val_label_dir, exist_ok=False)
-
+    
     with VideoCapture(video_path) as capture:
 
         width  = capture.get(cv.CAP_PROP_FRAME_WIDTH)
@@ -178,6 +141,48 @@ if __name__ == "__main__":
                     cv.imwrite(os.path.join(train_img_dir, filename), img)
                     with open(os.path.join(train_label_dir, labels_filename), 'w') as f:
                         f.write(labels)
+
+DOCTEXT = f"""
+Usage:
+  video_to_crop_ultralytics.py (<video_path> <seq_path>)... <output_file> [--test_frac=<tf>] [--sampling_rate=<sr>] [--width=<w>] [--height=<h>]
+
+Options:
+  --test_frac=<tf>          The fraction of frames used for testing. [default: 0.3]
+  --sampling_rate=<sr>      Number of frames skipped between saved images. [default: 2]
+  --width=<w>               Width of the crop. [default: 640]
+  --height=<h>              Height of the crop. [default: 640]
+
+"""
+
+if __name__ == "__main__":
+
+    args = docopt(DOCTEXT, argv=sys.argv[1:], help=True, version=None, options_first=False)
+    video_pathes = args['<video_path>']
+    seq_pathes = args['<seq_path>']
+    
+    output_file = args['<output_file>']
+
+    test_frac = float(args['--test_frac'])
+    sampling_rate = int(args['--sampling_rate'])
+
+    crop_width = int(args['--width'])
+    crop_height = int(args['--height'])
+
+    basename = os.path.basename(output_file)
+    yolo_config_dir = os.path.join(output_file, basename)
+    train_img_dir = os.path.join(output_file, basename, 'images', 'train')
+    val_img_dir = os.path.join(output_file, basename, 'images', 'val')
+    train_label_dir = os.path.join(output_file, basename, 'labels', 'train')
+    val_label_dir = os.path.join(output_file, basename, 'labels', 'val')
+
+    os.makedirs(yolo_config_dir, exist_ok=False)
+    os.makedirs(train_img_dir, exist_ok=False)
+    os.makedirs(val_img_dir, exist_ok=False)
+    os.makedirs(train_label_dir, exist_ok=False)
+    os.makedirs(val_label_dir, exist_ok=False)
+
+    for video_path, seq_path in video_pathes, seq_pathes:
+        process_video(video_path, seq_path, sampling_rate, test_frac, crop_width, crop_height, basename, val_img_dir, val_label_dir, train_img_dir, train_label_dir, verbose=True)
 
     config_text = f"""
     # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]

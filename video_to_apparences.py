@@ -121,47 +121,12 @@ def pad_reshape(bbox, imgsz):
     
     return crop
 
-    
-DOCTEXT = f"""
-Usage:
-  video_to_apparences.py <video_path> <seq_path> [--test_frac=<tf>] [--query_frac=<qf>] [--query_prob=<qp>] [--imgsz=<is>] [--sampling_rate=<sr>] [--reshape | --pad_reshape]
-
-Options:
-  --test_frac=<tf>          The fraction of identities used for testing. [default: 0.5]
-  --query_frac=<qf>         The fraction of test identities used for the query set. [default: 0.8]
-  --query_prob=<qp>         The probability of putting images into the query set instead of the test set after both sets have 3 images. [default: 0.1]
-  --imgsz=<is>              Image size [default: 64]
-  --sampling_rate=<sr>      Sampling rate [default: 5]
-  --reshape                 Reshape into size instead of crop and pad.
-  --pad_reshape             Pad small size until he big size and then reshape into size in stead of crop and pad.
-"""
-
-if __name__ == "__main__":
-
-    args = docopt(DOCTEXT, argv=sys.argv[1:], help=True, version=None, options_first=False)
-    video_path = args['<video_path>']
-    seq_path = args['<seq_path>']
-    test_frac = float(args['--test_frac'])
-    query_frac = float(args['--query_frac'])
-    query_prob = float(args['--query_prob'])
-    imgsz = int(args['--imgsz'])
-    sampling_rate = int(args['--sampling_rate'])
-    reshape = args['--reshape']
-    pad_reshape = args['--pad_reshape']
-
-    output_file = "Market-1501-v15.09.15"
-    train_dir = os.path.join(output_file, output_file, 'bounding_box_train')
-    test_dir = os.path.join(output_file, output_file, 'bounding_box_test')
-    query_dir = os.path.join(output_file, output_file, 'query')
-
-    os.makedirs(output_file, exist_ok=False)
-    os.makedirs(train_dir, exist_ok=False)
-    os.makedirs(test_dir, exist_ok=False)
-    os.makedirs(query_dir, exist_ok=False)
-
+def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, imgsz, train_dir, query_dir, test_dir, verbose=True):
     min_frames = 3
-    tracker = PrecomputedMOTTracker(seq_path, verbose=True, min_frames=min_frames * 2, sampling_rate=sampling_rate)
-    ids = np.unique(tracker.seq_dets[:, 1])
+    tracker = PrecomputedMOTTracker(seq_path, verbose=verbose, min_frames=min_frames * 2, sampling_rate=sampling_rate)
+    ids = np.unique(tracker.seq_dets[:, 1].astype(int))
+    new_id = {id_ : id_ if id_ not in seen_ids else max(seen_ids) + 1 for id_ in ids}
+    seen_ids.update(set(new_id.values()))
     
     np.random.shuffle(ids)
     train_ids = ids[int(len(ids) * test_frac):]
@@ -179,13 +144,13 @@ if __name__ == "__main__":
             queries = frames[idxs]
 
             if len(queries) > len(frames) // 2:
-                np.random.shuffle(frames)
+                #np.random.shuffle(frames) # Do not shuffle because frames too near in time are more or less equal
                 queries = frames[ : len(frames) // 2]
             
             query_id_frames.append(queries)
 
         else:
-            np.random.shuffle(frames)
+            #np.random.shuffle(frames) # Do not shuffle because frames too near in time are more or less equal
             query_id_frames.append(frames[:min_frames])
 
     wrong = 0
@@ -210,7 +175,7 @@ if __name__ == "__main__":
 
                 if reshape:
                     crop = cv.resize(crop, (imgsz, imgsz), interpolation=cv.INTER_AREA)
-                elif pad_reshape:
+                elif do_pad_reshape:
                     crop = pad_reshape(bbox, imgsz)
                 else:
                     crop = crop_pad(bbox, imgsz)
@@ -220,7 +185,7 @@ if __name__ == "__main__":
 
                 if id_ in train_ids: # train set
                     cid = np.random.randint(1, 3) # camara id 1 or 2
-                    filename = f'{id_:04}_c{cid}s1_{fr:06}_01.png'
+                    filename = f'{new_id[id_]:04}_c{cid}s1_{fr:06}_01.png'
                     try:
                         cv.imwrite(os.path.join(train_dir, filename), crop)
                         wrong = 0
@@ -233,7 +198,7 @@ if __name__ == "__main__":
                 else: # test set or query set
                     if (id_ in query_ids) and (fr in query_id_frames[int(np.where(query_ids == id_)[0])]): # query set
                         cid = np.random.randint(3, 5) # camara id 3 or 4
-                        filename = f'{id_:04}_c{cid}s1_{fr:06}_01.png'
+                        filename = f'{new_id[id_]:04}_c{cid}s1_{fr:06}_01.png'
                         try:
                             cv.imwrite(os.path.join(query_dir, filename), crop)
                             wrong = 0
@@ -245,7 +210,7 @@ if __name__ == "__main__":
 
                     else: # test set; TODO: add background crops (frame id: 0)
                         cid = np.random.randint(5, 7) # camara id 5 or 6
-                        filename = f'{id_:04}_c{cid}s1_{fr:06}_01.png'
+                        filename = f'{new_id[id_]:04}_c{cid}s1_{fr:06}_01.png'
                         try:
                             cv.imwrite(os.path.join(test_dir, filename), crop)
                             wrong = 0
@@ -254,6 +219,52 @@ if __name__ == "__main__":
                             if wrong > 10:
                                 print("10 consecutive wrong")
                                 raise e
+                            
+    return seen_ids
+
+
+DOCTEXT = f"""
+Usage:
+  video_to_apparences.py (<video_path> <seq_path>)... [--test_frac=<tf>] [--query_frac=<qf>] [--query_prob=<qp>] [--imgsz=<is>] [--sampling_rate=<sr>] [--reshape | --pad_reshape]
+
+Options:
+  --test_frac=<tf>          The fraction of identities used for testing. [default: 0.5]
+  --query_frac=<qf>         The fraction of test identities used for the query set. [default: 0.8]
+  --query_prob=<qp>         The probability of putting images into the query set instead of the test set after both sets have 3 images. [default: 0.1]
+  --imgsz=<is>              Image size [default: 64]
+  --sampling_rate=<sr>      Sampling rate [default: 5]
+  --reshape                 Reshape into size instead of crop and pad.
+  --pad_reshape             Pad small size until he big size and then reshape into size in stead of crop and pad.
+"""
+
+if __name__ == "__main__":
+
+    args = docopt(DOCTEXT, argv=sys.argv[1:], help=True, version=None, options_first=False)
+
+    video_pathes = args['<video_path>']
+    seq_pathes = args['<seq_path>']
+
+    test_frac = float(args['--test_frac'])
+    query_frac = float(args['--query_frac'])
+    query_prob = float(args['--query_prob'])
+    imgsz = int(args['--imgsz'])
+    sampling_rate = int(args['--sampling_rate'])
+    reshape = args['--reshape']
+    do_pad_reshape = args['--pad_reshape']
+
+    output_file = "Market-1501-v15.09.15"
+    train_dir = os.path.join(output_file, output_file, 'bounding_box_train')
+    test_dir = os.path.join(output_file, output_file, 'bounding_box_test')
+    query_dir = os.path.join(output_file, output_file, 'query')
+
+    os.makedirs(output_file, exist_ok=False)
+    os.makedirs(train_dir, exist_ok=False)
+    os.makedirs(test_dir, exist_ok=False)
+    os.makedirs(query_dir, exist_ok=False)
+
+    seen_ids = set()
+    for video_path, seq_path in video_pathes, seq_pathes:
+        process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, imgsz, train_dir, query_dir, test_dir, verbose=True)
 
     shutil.make_archive(output_file, 'zip', output_file)
     shutil.rmtree(output_file)
