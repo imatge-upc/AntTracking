@@ -78,7 +78,7 @@ class PrecomputedMOTTracker():
 
         return tcks
 
-def crop_pad(bbox, crop_w, crop_h):
+def crop_pad(crop, bbox, crop_w, crop_h):
 
     h = bbox[3]
     w = bbox[2]
@@ -103,7 +103,7 @@ def crop_pad(bbox, crop_w, crop_h):
     
     return crop
 
-def pad_reshape(bbox, crop_w, crop_h):
+def pad_reshape(crop, bbox, crop_w, crop_h):
 
     h = bbox[3]
     w = bbox[2]
@@ -229,9 +229,9 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
                 if reshape:
                     crop = cv.resize(crop, (crop_w, crop_h), interpolation=cv.INTER_AREA)
                 elif do_pad_reshape:
-                    crop = pad_reshape(bbox, crop_w, crop_h)
+                    crop = pad_reshape(crop, bbox, crop_w, crop_h)
                 else:
-                    crop = crop_pad(bbox, crop_w, crop_h)
+                    crop = crop_pad(crop, bbox, crop_w, crop_h)
                 
                 if crop.shape[0] != crop_h or crop.shape[1] != crop_w:
                     continue
