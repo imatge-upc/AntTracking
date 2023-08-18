@@ -23,7 +23,7 @@ parameters:
   model:
     value: ./DATA/yolov8n.pt
   data:
-    value: './DATA/datasets/colonia_minut_640x640_crops/colonia_minut_640x640_crops.yaml'
+    value: './DATA/datasets/colonias_640x640_crops/colonias_640x640_crops.yaml'
   imgsz:
     value: 640
   single_cls:
