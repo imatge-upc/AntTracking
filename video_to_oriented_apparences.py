@@ -168,6 +168,12 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
     ids = np.unique(tracker.seq_dets[:, 1].astype(int))
     new_id = {id_ : id_ if id_ not in seen_ids else max(seen_ids) + 1 for id_ in ids}
     seen_ids.update(set(new_id.values()))
+
+    if verbose:
+        print("\tNEW IDs")
+        print(new_id)
+        print("\tSEEN IDS")
+        print(seen_ids)
     
     np.random.shuffle(ids)
     train_ids = ids[int(len(ids) * test_frac):]
