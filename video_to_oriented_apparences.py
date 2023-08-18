@@ -166,7 +166,7 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
     min_frames = 3
     tracker = PrecomputedMOTTracker(seq_path, verbose=verbose, min_frames=min_frames * 2, sampling_rate=sampling_rate)
     ids = np.unique(tracker.seq_dets[:, 1].astype(int))
-    new_id = {id_ : id_ if id_ not in seen_ids else max(seen_ids) + 1 for id_ in ids}
+    new_id = {id_ : id_ if id_ not in seen_ids else max(seen_ids) + id_ for id_ in ids}
     seen_ids.update(set(new_id.values()))
 
     if verbose:
