@@ -28,7 +28,7 @@ def VideoCapture(input_video):
 
 class PrecomputedMOTTracker():
 
-    def __init__(self, seq_path=None, first_frame=1, verbose=False, min_frames=6, iou_th=0.3, min_area=2500, sampling_rate=5):
+    def __init__(self, seq_path=None, first_frame=1, verbose=False, min_frames=6, iou_th=0.7, min_area=1500, sampling_rate=5):
 
         self.seq_dets = np.loadtxt(seq_path, delimiter=',')
 
@@ -264,8 +264,8 @@ if __name__ == "__main__":
 
     seen_ids = set()
     for i, (video_path, seq_path) in enumerate(zip(video_pathes, seq_pathes)):
-        print(f'VIDEO {i} OF {len(video_pathes)}')
-        process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, imgsz, train_dir, query_dir, test_dir, verbose=True)
+        print(f'VIDEO {i + 1} OF {len(video_pathes)}')
+        seen_ids = process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, imgsz, train_dir, query_dir, test_dir, verbose=True)
 
     shutil.make_archive(output_file, 'zip', output_file)
     shutil.rmtree(output_file)

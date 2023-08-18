@@ -80,7 +80,7 @@ def adjust_annotations(tracks, seen, initial, final, crop_width, crop_height):
 
     return tracks_save, seen
 
-def process_video(video_path, seq_path, sampling_rate, test_frac, crop_width, crop_height, basename, val_img_dir, val_label_dir, train_img_dir, train_label_dir, verbose=True):
+def process_video(video_path, seq_path, sampling_rate, test_frac, crop_width, crop_height, basename, val_img_dir, val_label_dir, train_img_dir, train_label_dir, video_id, verbose=True):
 
     tracker = PrecomputedMOTTracker(seq_path, verbose=verbose)
     #save_frames = np.arange(1, tracker.last_frame, sampling_rate, dtype=int)
@@ -126,8 +126,9 @@ def process_video(video_path, seq_path, sampling_rate, test_frac, crop_width, cr
 
                 tracks_save, seen = adjust_annotations(tracks, seen, initial, final, crop_width, crop_height)
 
-                filename = f'{basename}_{fr:06}_{idx}_{len(tracks_save)}.png'
-                labels_filename = f'{basename}_{fr:06}_{idx}_{len(tracks_save)}.txt'
+                base_filename = f'{basename}_{video_id}_{fr:06}_{idx}_{len(tracks_save)}'
+                filename = f'{base_filename}.png'
+                labels_filename = f'{base_filename}.txt'
                 idx += 1
 
                 mot2yolo = lambda trk : ['0', f'{(trk[2] + (trk[4] / 2)) / crop_width}', f'{(trk[3] + (trk[5] / 2)) / crop_height}', f'{trk[4] / crop_width}', f'{trk[5] / crop_height}']
@@ -183,7 +184,7 @@ if __name__ == "__main__":
 
     for i, (video_path, seq_path) in enumerate(zip(video_pathes, seq_pathes)):
         print(f'VIDEO {i} OF {len(video_pathes)}')
-        process_video(video_path, seq_path, sampling_rate, test_frac, crop_width, crop_height, basename, val_img_dir, val_label_dir, train_img_dir, train_label_dir, verbose=True)
+        process_video(video_path, seq_path, sampling_rate, test_frac, crop_width, crop_height, basename, val_img_dir, val_label_dir, train_img_dir, train_label_dir, i, verbose=True)
 
     config_text = f"""
     # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
