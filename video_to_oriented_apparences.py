@@ -166,7 +166,7 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
     min_frames = 3
     tracker = PrecomputedMOTTracker(seq_path, verbose=verbose, min_frames=min_frames * 2, sampling_rate=sampling_rate)
     ids = np.unique(tracker.seq_dets[:, 1].astype(int))
-    new_id = {id_ : id_ if id_ not in seen_ids else max(seen_ids) + id_ for id_ in ids}
+    new_id = {id_ : max(seen_ids) + id_ for id_ in ids}
     seen_ids.update(set(new_id.values()))
 
     if verbose:
@@ -323,7 +323,7 @@ if __name__ == "__main__":
     os.makedirs(test_dir, exist_ok=False)
     os.makedirs(query_dir, exist_ok=False)
 
-    seen_ids = set()
+    seen_ids = set([0])
     for i, (video_path, seq_path) in enumerate(zip(video_pathes, seq_pathes)):
         print(f'VIDEO {i + 1} OF {len(video_pathes)}')
         seen_ids = process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, crop_w, crop_h, train_dir, query_dir, test_dir, verbose=True)
