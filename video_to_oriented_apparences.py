@@ -110,9 +110,9 @@ def pad_reshape(crop, bbox, crop_w, crop_h):
 
     ar = crop_h / crop_w
     
-    pad_h = (w * ar - h) // 2
-    pad_w = (h / ar - w) // 2
-    pad = ((pad_h, w * ar - h - pad_h), (0, 0)) if h < w * ar else ((0, 0), (pad_w, h / ar - w - pad_w))
+    pad_h = int((w * ar - h) // 2)
+    pad_w = int((h / ar - w) // 2)
+    pad = ((pad_h, int(w * ar - h - pad_h)), (0, 0)) if h < w * ar else ((0, 0), (pad_w, int(h / ar - w - pad_w)))
     pad_color = np.median(crop, axis=(0, 1))
     
     crop = np.stack([np.pad(crop[:, :, c], pad, mode='constant', constant_values=pad_color[c]) for c in range(3)], axis=2)
