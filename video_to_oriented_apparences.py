@@ -235,8 +235,9 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
                         print(f'{skipped} skipped ({skipped} / {total})')
                     continue
 
-                post_bbox = post_tracks[post_tracks[:, 1] == tck[1], 2:6][0, :].squeeze()
+                post_bbox = post_tracks[post_tracks[:, 1] == tck[1], 2:6]
                 if len(post_bbox) > 0:
+                    post_bbox = post_bbox[0, :].squeeze()
                     crop = crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_size=20)
                 else:
                     pre_bbox = pre_tracks[pre_tracks[:, 1] == tck[1], 2:6][0, :].squeeze()
