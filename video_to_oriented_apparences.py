@@ -133,7 +133,7 @@ def rotate(image, angle, center=None, scale=1.0):
 
     return rotated, M
 
-def crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_size=20):
+def crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_size=20, pre=False):
     gray_crop = gray_frame[bbox[1] : bbox[1] + bbox[3], bbox[0] : bbox[0] + bbox[2]]
     pts = np.argwhere(gray_crop < background_th).reshape(-1, 2).astype(np.float32)
 
@@ -146,8 +146,9 @@ def crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_
 
     cntr = bbox[:2] + bbox[2:4] / 2
     post_cntr = post_bbox[:2] + post_bbox[2:4] / 2
-    module = np.linalg.norm(post_cntr - cntr)
-    angle = np.pi / 2 - np.arccos((post_cntr - cntr)[0] / module) * (1. if (post_cntr - cntr)[1] >= 0 else -1.)
+    delta = post_cntr - cntr if not pre else cntr - post_cntr
+    module = np.linalg.norm(delta)
+    angle = np.pi / 2 - np.arccos(delta[0] / module) * (1. if delta[1] >= 0 else -1.)
 
     angle_dist = min(np.abs(angle - pca_angle_ori), 2 * np.pi - np.abs(angle - pca_angle_ori))
     pca_angle = pca_angle_ori if (2 * angle_dist) < np.pi else pca_angle_ori - np.pi
@@ -202,11 +203,15 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
 
     wrong = 0
     skipped = 0
+    total = 0
     with VideoCapture(video_path) as capture:
         for fr in range(1, tracker.last_frame - 1):
 
             tracks = tracker(fr)
-            post_tracks = tracker(fr + 1, aux=True)
+            post_mask = tracker.seq_dets[:, 0] > fr and tracker.seq_dets[:, 0] < fr + 100
+            post_tracks = tracker.seq_dets[post_mask, :]
+            pre_mask = tracker.seq_dets[:, 0] < fr and tracker.seq_dets[:, 0] > max(fr - 100, 0)
+            pre_tracks = tracker.seq_dets[pre_mask, :]
             if len(tracks) == 0:
                 continue
 
@@ -223,14 +228,19 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
                 bbox = tck[2:6].astype(int)
                 id_ = tck[1].astype(int)
 
-                if tck[1] not in post_tracks[:, 1]:
+                total += 1
+                if tck[1] not in post_tracks[:, 1] and tck[1] not in pre_tracks[:, 1]:
                     skipped += 1
                     if skipped % 10 == 0:
-                        print(f'{skipped} skipped')
+                        print(f'{skipped} skipped ({skipped} / {total})')
                     continue
 
-                post_bbox = post_tracks[post_tracks[:, 1] == tck[1], 2:6].squeeze()
-                crop = crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_size=20)
+                post_bbox = post_tracks[post_tracks[:, 1] == tck[1], 2:6][0, :].squeeze()
+                if len(post_bbox) > 0:
+                    crop = crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_size=20)
+                else:
+                    pre_bbox = pre_tracks[pre_tracks[:, 1] == tck[1], 2:6][0, :].squeeze()
+                    crop = crop_pca_rotate_crop(gray_frame, frame, bbox, pre_bbox, background_th, min_size=20, pre=True)
 
                 if reshape:
                     crop = cv.resize(crop, (crop_w, crop_h), interpolation=cv.INTER_AREA)
