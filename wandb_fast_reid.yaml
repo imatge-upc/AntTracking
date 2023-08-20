@@ -191,6 +191,6 @@ parameters:
     value: False
 
   MODEL.PIXEL_MEAN:
-    value: "(123.675, 116.28, 103.53)"
+    value: "(0.00386753, 0.00386753, 0.00386753)"
   MODEL.PIXEL_STD:
-    value: "(58.395, 57.12, 57.375)"
+    value: "(0.04723771, 0.04723771, 0.04723771)"
