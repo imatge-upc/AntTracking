@@ -208,9 +208,9 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
         for fr in range(1, tracker.last_frame - 1):
 
             tracks = tracker(fr)
-            post_mask = tracker.seq_dets[:, 0] > fr and tracker.seq_dets[:, 0] < fr + 100
+            post_mask = (tracker.seq_dets[:, 0] > fr) & (tracker.seq_dets[:, 0] < (fr + 100))
             post_tracks = tracker.seq_dets[post_mask, :]
-            pre_mask = tracker.seq_dets[:, 0] < fr and tracker.seq_dets[:, 0] > max(fr - 100, 0)
+            pre_mask = (tracker.seq_dets[:, 0] < fr) & (tracker.seq_dets[:, 0] > max(fr - 100, 0))
             pre_tracks = tracker.seq_dets[pre_mask, :]
             if len(tracks) == 0:
                 continue
