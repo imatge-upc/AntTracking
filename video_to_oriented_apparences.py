@@ -153,7 +153,7 @@ def crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_
     angle_dist = min(np.abs(angle - pca_angle_ori), 2 * np.pi - np.abs(angle - pca_angle_ori))
     pca_angle = pca_angle_ori if (2 * angle_dist) < np.pi else pca_angle_ori - np.pi
 
-    rot_frame, M = rotate(frame, np.rad2deg(pca_angle), (int(cntr[1]), int(cntr[0])))
+    rot_frame, M = rotate(frame, np.rad2deg(pca_angle), (int(cntr[0]), int(cntr[1])))
 
     deltas = bbox[2:4] * np.abs(np.cos(pca_angle)) + bbox[4:2:-1] * np.abs(np.sin(pca_angle))
     w, h = deltas.astype(int)
