@@ -49,22 +49,22 @@ def crop_pad_rotations(frame, bbox, background_color, height, width, axis):
     output = []
     for rot in axis:
 
-        img = np.full((height, width, len(background_color)), background_color).reshape(len(background_color), height, width)
+        img = np.moveaxis(np.full((height, width, len(background_color)), background_color), [0, 1, 2], [1, 2, 0])
         
         h = int(min(bbox[3], height))
         w = int(min(bbox[2], width))
 
-        rot_frame, M = rotate(frame, rot, (bbox[0] + w/2, bbox[1] + h/2))
-
         center = np.array((bbox[0] + w/2, bbox[1] + h/2))
-        origin = np.dot(bbox[:2] - center, M).astype(int)[:2] + center
+
+        rot_frame, M = rotate(frame, rot, center.tolist())
+        #origin = np.dot(bbox[:2] - center, M).astype(int)[:2] + center
 
         deltas = bbox[2:4] * np.abs(np.cos(np.deg2rad(rot))) + bbox[4:2:-1] * np.abs(np.sin(np.deg2rad(rot)))
         deltas = deltas.astype(int)
         h = int(min(deltas[1], height))
         w = int(min(deltas[0], width))
 
-        crop = rot_frame[int(origin[1]) : int(origin[1]) + h, int(origin[0]) : int(origin[0]) + w, :]
+        crop = rot_frame[int(center[1] - h / 2) : int(center[1] + h / 2), int(center[0] - w / 2) : int(center[0] + w / 2), :]
         h = crop.shape[0]
         w = crop.shape[1]
 
@@ -78,7 +78,7 @@ def crop_pad_rotations(frame, bbox, background_color, height, width, axis):
 
 def crop_pad(frame, bbox, background_color, height, width):
 
-    img = np.full((height, width, len(background_color)), background_color).reshape(len(background_color), height, width)
+    img = np.moveaxis(np.full((height, width, len(background_color)), background_color), [0, 1, 2], [1, 2, 0])
     
     h = int(min(bbox[3], height))
     w = int(min(bbox[2], width))

@@ -155,15 +155,14 @@ def crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_
 
     rot_frame, M = rotate(frame, np.rad2deg(pca_angle), (int(cntr[1]), int(cntr[0])))
 
-    origin = np.dot(bbox[:2] - cntr, M).astype(int)[:2] + cntr
     deltas = bbox[2:4] * np.abs(np.cos(pca_angle)) + bbox[4:2:-1] * np.abs(np.sin(pca_angle))
     w, h = deltas.astype(int)
 
-    crop = rot_frame[int(origin[1]) : int(origin[1]) + h, int(origin[0]) : int(origin[0]) + w, :]
+    crop = rot_frame[int(cntr[1] - h / 2) : int(cntr[1] + h / 2), int(cntr[0] - w / 2) : int(cntr[0] + w / 2), :]
 
     return crop
 
-def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, crop_w, crop_h, train_dir, query_dir, test_dir, verbose=True):
+def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, crop_w, crop_h, train_dir, query_dir, test_dir, windows, verbose=True):
     min_frames = 3
     tracker = PrecomputedMOTTracker(seq_path, verbose=verbose, min_frames=min_frames * 2, sampling_rate=sampling_rate)
     ids = np.unique(tracker.seq_dets[:, 1].astype(int))
@@ -208,9 +207,9 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
         for fr in range(1, tracker.last_frame - 1):
 
             tracks = tracker(fr)
-            post_mask = (tracker.seq_dets[:, 0] > fr) & (tracker.seq_dets[:, 0] < (fr + 100))
+            post_mask = (tracker.seq_dets[:, 0] > fr) & (tracker.seq_dets[:, 0] < (fr + windows))
             post_tracks = tracker.seq_dets[post_mask, :]
-            pre_mask = (tracker.seq_dets[:, 0] < fr) & (tracker.seq_dets[:, 0] > max(fr - 100, 0))
+            pre_mask = (tracker.seq_dets[:, 0] < fr) & (tracker.seq_dets[:, 0] > max(fr - windows, 0))
             pre_tracks = tracker.seq_dets[pre_mask, :]
             if len(tracks) == 0:
                 continue
@@ -295,7 +294,7 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
     
 DOCTEXT = f"""
 Usage:
-  video_to_oriented_apparences.py (<video_path> <seq_path>)... [--test_frac=<tf>] [--query_frac=<qf>] [--query_prob=<qp>] [--crop_h=<ch>] [--crop_w=<cw>] [--sampling_rate=<sr>] [--reshape | --pad_reshape]
+  video_to_oriented_apparences.py (<video_path> <seq_path>)... [--test_frac=<tf>] [--query_frac=<qf>] [--query_prob=<qp>] [--crop_h=<ch>] [--crop_w=<cw>] [--sampling_rate=<sr>] [--windows=<w>] [--reshape | --pad_reshape]
 
 Options:
   --test_frac=<tf>          The fraction of identities used for testing. [default: 0.5]
@@ -304,6 +303,7 @@ Options:
   --crop_h=<ch>             Identity crop height size [default: 64]
   --crop_w=<cw>             Identity crop width size [default: 32]
   --sampling_rate=<sr>      Sampling rate [default: 5]
+  --windows=<w>             Maximum frame distance to decide the orientation by motion [default: 100]
   --reshape                 Reshape into size instead of crop and pad.
   --pad_reshape             Pad small size until he big size and then reshape into size in stead of crop and pad.
 """
@@ -321,6 +321,7 @@ if __name__ == "__main__":
     crop_h = int(args['--crop_h'])
     crop_w = int(args['--crop_w'])
     sampling_rate = int(args['--sampling_rate'])
+    windows = int(args['--windows'])
     reshape = args['--reshape']
     do_pad_reshape = args['--pad_reshape']
 
@@ -337,7 +338,7 @@ if __name__ == "__main__":
     seen_ids = set([0])
     for i, (video_path, seq_path) in enumerate(zip(video_pathes, seq_pathes)):
         print(f'VIDEO {i + 1} OF {len(video_pathes)}')
-        seen_ids = process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, crop_w, crop_h, train_dir, query_dir, test_dir, verbose=True)
+        seen_ids = process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, crop_w, crop_h, train_dir, query_dir, test_dir, windows, verbose=True)
 
     shutil.make_archive(output_file, 'zip', output_file)
     shutil.rmtree(output_file)
