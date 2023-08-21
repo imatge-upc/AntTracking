@@ -142,13 +142,15 @@ def crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_
     mean = np.empty((0))
     _, eigenvectors, _ = cv.PCACompute2(pts, mean)
 
-    pca_angle_ori = np.arctan2(eigenvectors[0, 1], eigenvectors[0, 0])
+    # pca_angle_ori = np.arctan2(eigenvectors[0, 1], eigenvectors[0, 0])
+    pca_angle_ori = np.arccos(eigenvectors[0, 0] / np.linalg.norm(eigenvectors[0, :]))
 
     cntr = bbox[:2] + bbox[2:4] / 2
     post_cntr = post_bbox[:2] + post_bbox[2:4] / 2
     delta = post_cntr - cntr if not pre else cntr - post_cntr
     module = np.linalg.norm(delta)
-    angle = np.pi / 2 - np.arccos(delta[0] / module) * (1. if delta[1] >= 0 else -1.)
+    #angle = np.pi / 2 - np.arccos(delta[0] / module) * (1. if delta[1] >= 0 else -1.)
+    angle = np.arccos(delta[0] / module) * (1. if delta[1] >= 0 else -1.)
 
     angle_dist = min(np.abs(angle - pca_angle_ori), 2 * np.pi - np.abs(angle - pca_angle_ori))
     pca_angle = pca_angle_ori if (2 * angle_dist) < np.pi else pca_angle_ori - np.pi
