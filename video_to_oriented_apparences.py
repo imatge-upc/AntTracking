@@ -164,7 +164,7 @@ def crop_pca_rotate_crop(gray_frame, frame, bbox, post_bbox, background_th, min_
 
     return crop
 
-def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, crop_w, crop_h, train_dir, query_dir, test_dir, windows, verbose=True):
+def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, crop_w, crop_h, train_dir, query_dir, test_dir, windows, th=0.5, verbose=True):
     min_frames = 3
     tracker = PrecomputedMOTTracker(seq_path, verbose=verbose, min_frames=min_frames * 2, sampling_rate=sampling_rate)
     ids = np.unique(tracker.seq_dets[:, 1].astype(int))
@@ -223,7 +223,7 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
                 break
 
             gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-            background_th = np.mean(gray_frame) * 0.5
+            background_th = np.mean(gray_frame) * th
 
             for tck in tracks:
                 bbox = tck[2:6].astype(int)
@@ -296,7 +296,7 @@ def process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, quer
     
 DOCTEXT = f"""
 Usage:
-  video_to_oriented_apparences.py (<video_path> <seq_path>)... [--test_frac=<tf>] [--query_frac=<qf>] [--query_prob=<qp>] [--crop_h=<ch>] [--crop_w=<cw>] [--sampling_rate=<sr>] [--windows=<w>] [--reshape | --pad_reshape]
+  video_to_oriented_apparences.py (<video_path> <seq_path>)... [--test_frac=<tf>] [--query_frac=<qf>] [--query_prob=<qp>] [--crop_h=<ch>] [--crop_w=<cw>] [--sampling_rate=<sr>] [--windows=<w>] [--th=<t>] [--reshape | --pad_reshape]
 
 Options:
   --test_frac=<tf>          The fraction of identities used for testing. [default: 0.5]
@@ -306,6 +306,7 @@ Options:
   --crop_w=<cw>             Identity crop width size [default: 32]
   --sampling_rate=<sr>      Sampling rate [default: 5]
   --windows=<w>             Maximum frame distance to decide the orientation by motion [default: 100]
+  --th=<t>                  Percentage of the mean color of a frame that will be used to segment the ant while computing PCA [default: 0.5].
   --reshape                 Reshape into size instead of crop and pad.
   --pad_reshape             Pad small size until he big size and then reshape into size in stead of crop and pad.
 """
@@ -324,6 +325,7 @@ if __name__ == "__main__":
     crop_w = int(args['--crop_w'])
     sampling_rate = int(args['--sampling_rate'])
     windows = int(args['--windows'])
+    th = float(args['--th'])
     reshape = args['--reshape']
     do_pad_reshape = args['--pad_reshape']
 
@@ -340,7 +342,7 @@ if __name__ == "__main__":
     seen_ids = set([0])
     for i, (video_path, seq_path) in enumerate(zip(video_pathes, seq_pathes)):
         print(f'VIDEO {i + 1} OF {len(video_pathes)}')
-        seen_ids = process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, crop_w, crop_h, train_dir, query_dir, test_dir, windows, verbose=True)
+        seen_ids = process_video(seen_ids, video_path, seq_path, sampling_rate, test_frac, query_frac, query_prob, reshape, do_pad_reshape, crop_w, crop_h, train_dir, query_dir, test_dir, windows, th, verbose=True)
 
     shutil.make_archive(output_file, 'zip', output_file)
     shutil.rmtree(output_file)
