@@ -43,8 +43,8 @@ if __name__ == '__main__':
             gt_name = os.path.join(gtfiles_dir, pred_name, 'gt/gt.txt')
 
             # Read GT and tracker files
-            df       = pd.read_csv(gt_name, header=0, names=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'a','b','c'])
-            df_track = pd.read_csv(tfn, header=0, names=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'conf', 'a','b','c'])
+            df       = pd.read_csv(gt_name, header=0, names=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'a','b','c'], index_col=False)
+            df_track = pd.read_csv(tfn, header=0, names=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'conf', 'a','b','c'], index_col=False)
 
             # Read tracking and ground truth data
             raw_data  = dataset.get_raw_seq_data(tracker_name, pred_name)
@@ -57,7 +57,7 @@ if __name__ == '__main__':
             print_trackfile(tfn, pred_name, df, df_track, final_associations, ids_equiv)
             
             # Generate the image
-            out_ima  = plot_tracks(df, df_track, final_associations, ids_equiv, ima_size=(12000, 7600), one_file=one_file)
+            out_ima  = plot_tracks(df, df_track, final_associations, ids_equiv, ima_size=(6000, 3000), one_file=one_file)
             out_ima = cv2.cvtColor(out_ima, cv2.COLOR_RGB2BGR)
             
             # Save the image

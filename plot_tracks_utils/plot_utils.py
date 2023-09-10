@@ -78,6 +78,7 @@ def set_plot_colors(max_tracks):
 
 def draw_ground_truth(out_ima, tids, df_gt, ids_equiv, frame_offset, top_margin, vertical_spacing, left_margin, pixels_per_frame, line_thickness, color=(0, 0, 0)):
     # For each GT track ...
+
     for ii in range(len(tids)): # ID 0-based
         # Create the list of frames for this track id
         segments = segmentate_track(df_gt, ids_equiv['gt'][ii])
@@ -117,6 +118,7 @@ def draw_associated(out_ima, ptids, df_track, ids_equiv, frame_offset, final_ass
             for jj, fr in enumerate(seg):
 
                 fr_idx = fr - 1 # - frame_offset # NOTE: IGNASI 28/06/2023 The original version that works on other data uses the "- frame_offset" instead of "- 1"
+                fr_idx = fr - frame_offset
                 fr_plot_point = fr_idx - frame_offset # NOTE: IGNASI 28/06/2023 When ploting, I do need to correct the offset like the original version
                 
                 if final_associations[fr_idx, ii] == -1:
@@ -154,6 +156,7 @@ def draw_unassociated(out_ima, unassociated_tracks, df_track, ids_equiv, frame_o
             for jj, fr in enumerate(seg):
 
                 fr_idx = fr - 1 # - frame_offset # NOTE: IGNASI 28/06/2023 The original version that works on other data uses the "- frame_offset" instead of "- 1", in my case it doesn't work with it
+                fr_idx = fr - frame_offset
                 fr_plot_point = fr_idx - frame_offset # NOTE: IGNASI 28/06/2023 When ploting, I do need to correct the offset like the original version
 
                 y_coord = top_margin + (largest_gt_track_id + 1 + ii) * vertical_spacing + gt_pred_sep + line_thickness
@@ -174,7 +177,7 @@ def plot_tracks(df_gt:pd.DataFrame, df_track:pd.DataFrame, final_associations:np
     Right margin: width in pixels. Contains white space
     Top margin: width in pixels
     """
-
+    
     # list of unique GT track ids
     tids = sorted(list(set(df_gt['trackId'])))
     # list of unique pred track ids

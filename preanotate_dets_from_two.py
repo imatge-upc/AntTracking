@@ -148,8 +148,10 @@ if __name__ == '__main__':
         indices_ok = valid_frames(validFramesFile)
         true_fn = empty_where_there_should_be(prioDets, indices_ok)
     else:
-        indices_ok = np.sort(np.unique(np.concatenate(prioDets[:, 0], auxDets[:, 0])))
+        indices_ok = np.sort(np.unique(np.concatenate( [prioDets[:, 0], auxDets[:, 0]] )))
         true_fn = np.empty((0))
+    
+    indices_ok = indices_ok.astype(int)
 
     if onePerFrame:
         true_fp = more_than_one_object(prioDets)

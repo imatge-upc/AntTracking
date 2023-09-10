@@ -72,8 +72,9 @@ def compute_matrix(tracklets_df, descriptors_df, causality=True):
 
     # 2 tracks that appers at the same time cannot be the same track
     idx1, idx2 = compute_simultaneous(tracklets_df)
-    invalid_mask[idx1, idx2] = True
-    invalid_mask[idx2, idx1] = True
+    if len(idx1) > 0 and len(idx2) > 0:
+        invalid_mask[idx1, idx2] = True
+        invalid_mask[idx2, idx1] = True
 
     dist_matrix[invalid_mask] = np.inf
 
