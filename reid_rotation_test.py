@@ -167,8 +167,8 @@ def ant_with_another(input_video, seq_dets1, seq_dets2, apparence_model_applier,
     return min_dist, max_dist, mean_dist
 
 
-CONFIG_FILE = 'runs/apparence/train01_colonia_256_128/config.yaml'
-WEIGHTS_PATH = 'runs/apparence/train01_colonia_256_128/model_best.pth'
+CONFIG_FILE = 'runs/apparence/ants_fastreid_vocal-sweep-6_cee5t8ta/config.yaml'
+WEIGHTS_PATH = 'runs/apparence/ants_fastreid_vocal-sweep-6_cee5t8ta/model_best.pth'
 
 DOCTEXT = f""" 
 Usage:
@@ -236,25 +236,25 @@ if __name__ == '__main__':
     min_dist, max_dist, mean_dist = ant_with_itself(input_video, seq_dets1, apparence_model_applier, frame_ids1, axis)
 
     rad_axis = np.deg2rad(axis)
-    fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={'projection': 'polar'}, figsize=(6.4 * 2.5, 4.8 * 1.25))
-    fig.suptitle('Apparence Features Rotation Test')
+    fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={'projection': 'polar'}, figsize=(6.4 * 2.5, 4.8 * 1.25* 1.2), constrained_layout=True)
+    fig.suptitle('Apparence Features Rotation Test\n(The radial axis contains the cosine distance, the angular axis contains the rotation in degrees)')
 
     ax1.plot(rad_axis, mean_dist)
     ax1.plot(rad_axis, min_dist)
     ax1.plot(rad_axis, max_dist)
-    ax1.set_ylim([0, 1])
+    ax1.set_ylim([0, 0.02])
     ax1.grid(True)
     ax1.legend(['mean', 'min', 'max'])
-    ax1.set_title('Ant with itself rotated')
+    ax1.set_title(f'Ant crop compared with itself rotated\n(experiment done for {num_imgs} detections)')
 
     min_dist, max_dist, mean_dist = ant_with_another(input_video, seq_dets1, seq_dets2, apparence_model_applier, frame_ids1, frame_ids2, axis)
 
     ax2.plot(rad_axis, mean_dist)
     ax2.plot(rad_axis, min_dist)
     ax2.plot(rad_axis, max_dist)
-    ax2.set_ylim([0, 1])
+    ax2.set_ylim([0, 0.02])
     ax2.grid(True)
     ax2.legend(['mean', 'min', 'max'])
-    ax2.set_title('Ant with another rotated')
+    ax2.set_title(f'Ant crop compared with another ant rotated\n(experiment done for {num_imgs} pairs of different identities)')
 
     fig.savefig(output_file, dpi=300)

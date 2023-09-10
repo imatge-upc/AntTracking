@@ -36,7 +36,7 @@ class PrecomputedMOTDetector():
     
     def __call__(self, frame):
 
-        if self.verbose and ((frame - 1) % 500 == 0):
+        if self.verbose and ((frame - 1) % 10 == 0):
             print (f'Processing frame {frame - 1}', file=sys.stderr)
 
         dets = self.seq_dets[self.seq_dets[:, 0] == self.current_frame, :]

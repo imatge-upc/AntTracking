@@ -17,12 +17,13 @@ if __name__ == '__main__':
     tracking_file = args['<tracking_file>']
     output_file = args['<output_file>']
 
-    df = pd.read_csv(tracking_file, names=['frameId', 'trackId', 'tlx', 'tly', 'width', 'height', 'conf','a','b'])
+    df = pd.read_csv(tracking_file, names=['frameId', 'trackletId', 'tlx', 'tly', 'width', 'height', 'conf','trackId','b'])
+    df['trackletId'] = df['trackId']
     df['tlx'] = df['tlx'] * 2
     df['tly'] = df['tly'] * 2
     df['width'] = df['width'] * 2
     df['height'] = df['height'] * 2
-    df['a'] = -1
+    df['trackId'] = -1
     df['b'] = -1
     df['c'] = -1
 

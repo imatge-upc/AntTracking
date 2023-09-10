@@ -131,7 +131,7 @@ class DeepSortAssociator():
 
             if len(unmatched_idxs) > 0:
                 
-                aged_cost = cost[idxs[0], unmatched_idxs].reshape((len(idxs[0]), len(unmatched_idxs)))
+                aged_cost = cost[np.ix_(idxs[:, 0], unmatched_idxs)].reshape((len(idxs[:, 0]), len(unmatched_idxs)))
                 new_matches = linear_assignment(aged_cost)
 
                 new_matches = [m.reshape(1, 2) for m in new_matches if not gate[m[0], m[1]]]

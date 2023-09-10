@@ -22,8 +22,12 @@ metric:
 
 parameters:
 
+  SOLVER.MAX_EPOCH:
+    value: 1440
+  TEST.EVAL_PERIOD:
+    value: 144
   SOLVER.CHECKPOINT_PERIOD:
-    value: 1400
+    value: 144
 
   INPUT.SIZE_TRAIN:
     value: "(64, 64)"
@@ -34,6 +38,9 @@ parameters:
     value: 4
   DATALOADER.NUM_WORKERS:
     value: 8
+
+  SOLVER.IMS_PER_BATCH:
+    value: 64
 
   INPUT.AUGMIX.ENABLED:
     value: True
@@ -71,10 +78,10 @@ parameters:
     value: 0.5
 
   INPUT.ROTATION.ENABLED:
-    values: [True, False]
+    value: True
   INPUT.ROTATION.DEGREES:
     distribution: int_uniform
-    min: 0
+    min: 60
     max: 180
 
   MODEL.LOSSES.CE.ALPHA:
@@ -98,15 +105,10 @@ parameters:
   MODEL.QUEUE_SIZE:
     value: 8192
 
-  SOLVER.MAX_EPOCH:
-    value: 1440
-  TEST.EVAL_PERIOD:
-    value: 144
-
   SOLVER.BASE_LR:
     distribution: uniform
-    max: 0.01
-    min: 0.0001
+    max: 0.005
+    min: 0.00001
   SOLVER.BIAS_LR_FACTOR:
     value: 1.0
 
@@ -129,9 +131,6 @@ parameters:
 
   SOLVER.HEADS_LR_FACTOR:
     value: 1.0
-
-  SOLVER.IMS_PER_BATCH:
-    value: 64
 
   SOLVER.MOMENTUM:
     distribution: uniform
@@ -190,6 +189,8 @@ parameters:
   SOLVER.NESTEROV:
     value: False
 
+  MODEL.HEADS.NUM_CLASSES: 
+    value: 93
   MODEL.PIXEL_MEAN:
     value: "(0.00386753, 0.00386753, 0.00386753)"
   MODEL.PIXEL_STD:
