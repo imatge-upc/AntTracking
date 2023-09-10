@@ -76,29 +76,34 @@ if __name__ == '__main__':
     det_file = args['<detFile>']
     gt_file = args['<gtFile>']
 
-    #thresholds = np.arange(0.5, 1., 0.05)
-    thresholds = [0.5]
+    thresholds5095 = np.arange(0.5, 1., 0.05)
+    thresholds50 = [0.5]
 
     seq_dets = np.loadtxt(det_file, delimiter=',')
     seq_gt = np.loadtxt(gt_file, delimiter=',')
 
     frames = np.unique(np.concatenate((seq_dets[:, 0], seq_gt[:, 0]), axis=None))
 
-    map_ = list()
+    map50 = list()
+    map5095 = list()
     fn = list()
     fp = list()
     tn = list()
     tp = list()
     for fr in frames:
-        img_map, img_fn, img_fp, img_tn, img_tp = map_iou(seq_gt[seq_gt[:, 0] == fr, 2:6], seq_dets[seq_dets[:, 0] == fr, 2:6], seq_dets[seq_dets[:, 0] == fr, 7], thresholds=thresholds)
-        map_.append(img_map)
+        img_map, img_fn, img_fp, img_tn, img_tp = map_iou(seq_gt[seq_gt[:, 0] == fr, 2:6], seq_dets[seq_dets[:, 0] == fr, 2:6], seq_dets[seq_dets[:, 0] == fr, 7], thresholds=thresholds50)
+        map50.append(img_map)
         fn.append(img_fn)
         fp.append(img_fp)
         tn.append(img_tn)
         tp.append(img_tp)
 
-    print(f'mAP = {np.mean(map_)}')
-    print(f'FN = {sum(fn)} ({sum(fn) / (sum(fn) + sum(tp)) * 100} %)')
-    print(f'FP = {sum(fp)} ({sum(fp) / (sum(fp) + sum(tn)) * 100} %)')
-    print(f'Precision = {sum(tp) / (sum(tp) + sum(fp))}')
-    print(f'Recall = {sum(tp) / (sum(tp) + sum(fn))}')
+        img_map, _, _, _, _ = map_iou(seq_gt[seq_gt[:, 0] == fr, 2:6], seq_dets[seq_dets[:, 0] == fr, 2:6], seq_dets[seq_dets[:, 0] == fr, 7], thresholds=thresholds5095)
+        map5095.append(img_map)
+
+    print(f'mAP@50 = {np.mean(map50):.02f}')
+    print(f'mAP@50-95 = {np.mean(map5095):.02f}')
+    print(f'FN = {sum(fn)} ({sum(fn) / (sum(fn) + sum(tp)) * 100:02.02f} %)')
+    print(f'FP = {sum(fp)} ({sum(fp) / (sum(fp) + sum(tn)) * 100:02.02f} %)')
+    print(f'Precision = {sum(tp) / (sum(tp) + sum(fp)):.02f}')
+    print(f'Recall = {sum(tp) / (sum(tp) + sum(fn)):.02f}')

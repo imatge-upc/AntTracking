@@ -145,7 +145,7 @@ def process_video(video_path, seq_path, sampling_rate, test_frac, crop_width, cr
 
 DOCTEXT = f"""
 Usage:
-  video_to_crop_ultralytics.py (<video_path> <seq_path>)... <output_file> [--test_frac=<tf>] [--sampling_rate=<sr>] [--width=<w>] [--height=<h>]
+  video_to_crop_ultralytics.py <output_file> (<video_path> <seq_path>)... [--test_frac=<tf>] [--sampling_rate=<sr>] [--width=<w>] [--height=<h>]
 
 Options:
   --test_frac=<tf>          The fraction of frames used for testing. [default: 0.3]
@@ -183,7 +183,7 @@ if __name__ == "__main__":
     os.makedirs(val_label_dir, exist_ok=False)
 
     for i, (video_path, seq_path) in enumerate(zip(video_pathes, seq_pathes)):
-        print(f'VIDEO {i} OF {len(video_pathes)}')
+        print(f'VIDEO {i + 1} OF {len(video_pathes)}')
         process_video(video_path, seq_path, sampling_rate, test_frac, crop_width, crop_height, basename, val_img_dir, val_label_dir, train_img_dir, train_label_dir, i, verbose=True)
 
     config_text = f"""

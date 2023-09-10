@@ -79,7 +79,10 @@ if __name__ == '__main__':
     # RANK 1 ACCURACY
     rank1 = sum([1 for k, v in split_to_gt.items() if merging_dict.get(k, k) in gt_to_split[v]]) / len(split_to_gt)
     # CORRECT MERGINGS (precision)
-    precision = sum([1 for k, v in merging_dict.items() if split_to_gt[k] == split_to_gt[v]]) / len(merging_dict)
+    try:
+        precision = sum([1 for k, v in merging_dict.items() if split_to_gt[k] == split_to_gt[v]]) / len(merging_dict)
+    except ZeroDivisionError:
+        precision = 1
 
     # PX, TIME and APPARENCE DISTANCE BETWEEN SPLITS FROM THE SAME TRACK, APPARENCE DISTANCE WITH OTHER TRACKS IN THE TIME FRAME
     fr_dist, px_dist, app_dist, err_app_dist = compare_first_with_last(gt_to_split, tracklets_df, gt_tracking_df)
