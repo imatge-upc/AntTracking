@@ -7,8 +7,8 @@ WEIGHTS_PATH = 'runs/apparence/train01_colonia_256_128/model_best.pth'
 
 DOCTEXT = f""" 
 Usage:
-  apparence_tracks.py <input_video> <detFile> <output_file> [--config=<cf>] [--weights=<wp>]
-  apparence_tracks.py -h | --help
+  appearance_tracks.py <input_video> <detFile> <output_file> [--config=<cf>] [--weights=<wp>]
+  appearance_tracks.py -h | --help
 
 Options:
   --config=<cf>       Config file from the fastreid model. [default: {CONFIG_FILE}]
