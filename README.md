@@ -4,6 +4,8 @@ Tracking Ants in a lab table
 
 This code is intended to detect and track ants over a white table.
 
+El codi de la primera etapa de la recerca esta a la branca Ignasi, en aquesta branca s'ha filtrat alguns scripts que s'ha considerat que no s'utilitzaran en etapes futures.
+
 # Instalació d'entorn
 
 L'entorn habitual es "**ants**", també hi ha l'entorn "fastreid" que pot ser útil i l'entorn "deepsort" que permet usar el codi dels autors de "deepocsort" (el nom deepsort en lloc de deepocsort es un despiste).
@@ -28,17 +30,6 @@ Tots els programes (scripts) tenen una interficie docopt amb l'ajuda activada.
 ---
 <br>
 
-
-# ant_detection_pca.py
-
-Aplica un model de detecció basat en extracció del fons (background), estimat de manera dinamica, i, posteriorment, detecció de components conexes.
-
-A partir d'aquestes deteccions i un valor umbral basat en el nivell de gris mitja de la imatge, es segmenta la formiga per cada detecció, es calcula el PCA i s'afageix l'angle respecte a l'horitzontal les caracteristiques de la detecció.
-
-    python3 ant_detection_pca.py ./DATA/output_4_gt.mp4 ./OUTPUT/output_4_2_pca.txt --varThreshold=20 --startWriteFrames=500
-
-ES POT OMETRE DE CARA A LA CONTINUACIÓ DE LA INVESTIGACIÓ.
-
 # ant_detection_yolo_sahi.py
 
 Aplica un model de detecció YOLOv8n pre-entrenat.
@@ -54,24 +45,6 @@ o, en dos parts de 1000 frames,
     python3 ant_detection_yolo_sahi.py DATA/ant_subset_1-000.mp4 OUTPUT/subset_1-000_yolo_dets.txt runs/detect/ants_yolo_2_fancy-sweep-13_11wl20fa/weights/best.pt --imgsz=640 --initialFrame=0 --stopFrame=1000
 
     python3 ant_detection_yolo_sahi.py DATA/ant_subset_1-000.mp4 OUTPUT/subset_1-000_yolo_dets.txt runs/detect/ants_yolo_2_fancy-sweep-13_11wl20fa/weights/best.pt --imgsz=640 --initialFrame=1000 --stopFrame=1000
-
-# ant_detection_yolo.py
-
-Aplica un model de detecció YOLOv8n pre-entrenat.
-
-S'aplica a tota la imatge de cada frame.
-
-    python3 ant_detection_yolo.py DATA/ant_subset_1-000.mp4 OUTPUT/subset_1-000_yolo_dets.txt runs/detect/ants_yolo_2_fancy-sweep-13_11wl20fa/weights/best.pt --imgsz=640
-
-ES POT OMETRE DE CARA A LA CONTINUACIÓ DE LA INVESTIGACIÓ.
-
-# ant_detection.py
-
-Aplica un model de detecció basat en extracció del fons (background), estimat de manera dinamica, i, posteriorment, detecció de components conexes.
-
-    python3 ant_detection.py ./DATA/output_4_gt.mp4 ./OUTPUT/output_4_2.txt --varThreshold=20 --startWriteFrames=500
-
-ES POT OMETRE DE CARA A LA CONTINUACIÓ DE LA INVESTIGACIÓ.
 
 # appearance_tracks.py
 
@@ -90,16 +63,6 @@ En aquest grup de notebooks, s'aplica l'algoritme d'assignació de tracks estima
 En aquest cas, no s'aplica cap correcció de fase basada en pca ni s'espera que l'arxiu de tracks estimats contingui les prediccions del filtre de Kalman (perque el ground truth s'ha generat a partir de les mateixes deteccions).
 
 Els resultats d'aquest notebook permeten estudiar graficament l'error en modul, fase (direccio i sentit) i intersection over union (IoU) entre les associacions.
-
-## associated_histograms_pca.ipynb
-
-En aquest cas, s'aplica una correcció de fase als desplaçaments de les formigues basada en la direcció del cos de la formiga; el sentit del canvi de fase es la mínima fase entre la fase de la predicció i la nova fase.
-
-També s'espera que els tracks continguin les prediccions del filtre de Kalman i, adicionalment, l'angle amb l'eix X del cos de la formiga en la columna #10 (no usada en tracks 2D, previament reservada per les coordenades Z de tracks 3D).
-
-Els resultats d'aquest notebook peremten estudiar graficament l'error en fase i  intersection over union (IoU) entre les associacions i comparar els errors del sistema amb PCA amb el sistema sense PCA.
-
-ES POT OMETRE DE CARA A LA CONTINUACIÓ DE LA INVESTIGACIÓ.
 
 # cut_tracklets.py
 
@@ -153,10 +116,6 @@ A partir d'un arxiu de tracking en format MOT, genera un altre arxiu de tracking
 
     python3 interpolate_tracks.py OUTPUT/all_ants_0-007_yolo_ocsort04th08ciou_151.txt OUTPUT/all_ants_0-007_yolo_ocsort04th08ciou_gsi_151.txt
 
-# join_tracklets.py
-
-**TODO**: AFLink, ReID for splitted tracklets, etc
-
 # minimum_id.py
 
 EL DOCOPT D'AQUEST SCRIPT ESTÀ EN EL PROPI SCRIPT, JUST ABANS DEL MAIN.
@@ -170,22 +129,6 @@ Script per modificar els IDs discontinuus dels tracks detectats en IDs continuus
 Aplica el model de tracking definit en [OCSort](https://arxiv.org/pdf/2203.14360.pdf). Requereix un arxiu amb les deteccions en format MOT Challenge (resultat de ant_detection.py).
 
     python3 ocsort_track.py DATA/detections.txt test.txt --iouThreshold=0.1 --associationFunc=ciou
-
-# pca_tracks.py
-
-A partir d'un arxiu de tracking en format MOTChallenge i un valor umbral basat en el nivell de gris mitja de la imatge, es segmenta la formiga per cada detecció, es calcula el PCA i s'afageix l'angle respecte a l'horitzontal les caracteristiques de la linea del arxiu.
-
-    python3 pca_tracks.py DATA/output_4_gt.mp4 OUTPUT/ocsort_tracking_output_4.txt output_4_dets_pca.txt
-
-ES POT OMETRE DE CARA A LA CONTINUACIÓ DE LA INVESTIGACIÓ.
-
-# plot_pca_directions.ipynb
-
-Notebook per comprobar el correcte funcionament del sistema amb PCA. Es pot observar graficament la segmentació de les formigues i els vectors de desplaçament que s'aplicarien usant Kalman o PCA.
-
-Nomes s'observa un frame a la vegada i el numero de frames a avançar l'escull l'usuari al moment (cap numero o Esc avança 1 frame, un nombre negatiu o caracter no numeric finalitça el bloc).
-
-ES POT OMETRE DE CARA A LA CONTINUACIÓ DE LA INVESTIGACIÓ.
 
 # plot_rectangles_video.py
 
@@ -206,16 +149,6 @@ Representa gràficament el ground truth amb les identitats assignades a cada ide
 Requereix una estructura de directoris específica (la de MOT Challenge, mirar el directori plot_tracks_data).
 
     python3 plot_tracks.py plot_tracks_data/gt/mot_challenge/ plot_tracks_data/trackers/mot_challenge/ --trackerList=ocsort
-
-# postprocess_track.py
-
-EL DOCOPT D'AQUEST SCRIPT ESTÀ EN EL PROPI SCRIPT, JUST ABANS DEL MAIN.
-
-Actualment, nomes filtra bboxes més grans que un valor umbral de pixels per costat.
-
-    python3 OUTPUT/all_ants_0-007_yolo_ocsort04th08ciou_151.txt OUTPUT/all_ants_0-007_yolo_ocsort04th08ciou_post_151.txt --max_size=200
-
-ES POT OMETRE DE CARA A LA CONTINUACIÓ DE LA INVESTIGACIÓ.
 
 # preanotate_dets_from_two.py
 
@@ -303,14 +236,6 @@ Aquest script aplica els intervals annotats manualment per filtrar els frames on
 
     python3 segment_tracks.py OUTPUT/COLONIAS/colonia_A_0104_trck.txt DATA/COLONIAS/colonia_A_0104_frames.txt OUTPUT/COLONIAS/colonia_A_0104_trck_seg.txt
 
-# sort_inference.py
-
-Aplica el model de tracking definit en [SORT](https://arxiv.org/pdf/1602.00763.pdf). Requereix un arxiu amb les deteccions en format MOT Challenge (resultat de ant_detection.py).
-
-    python3 sort_inference.py DATA/detections.txt
-
-ES POT OMETRE DE CARA A LA CONTINUACIÓ DE LA INVESTIGACIÓ.
-
 # ultralytics_to_validable.py
 
 EL DOCOPT D'AQUEST SCRIPT ESTÀ EN EL PROPI SCRIPT, JUST ABANS DEL MAIN.
@@ -381,18 +306,6 @@ Els resultats poden tenir dimensions personalitzables ja que l'algoritme intenta
 L'input permet varios arxius de video i coresponent MOT per tal de generar un dataset amb moltes identitats sense colisio en les IDs.
 
     python -u video_to_oriented_apparences.py DATA/VIDEOS/COLONIA_A/colonia_A_0.mp4 OUTPUT/colonia_A0.txt DATA/VIDEOS/COLONIA_B/colonia_B_1.mp4 OUTPUT/colonia_B1.txt --sampling_rate=1 --th=0.4 --pad_reshape
-
-# video_to_ultralytics.py
-
-EL DOCOPT D'AQUEST SCRIPT ESTÀ EN EL PROPI SCRIPT, JUST ABANS DEL MAIN.
-
-Genera un dataset per deteccio d'objectes amb anotacions en format YOLO a partir de video i anotacions en format MOT.
-
-Els frames son usats directament com a imatges completes.
-
-    python3 video_to_ultralytics.py DATA/VIDEOS/COLONIA_A/colonia_A_0.mp4 OUTPUT/colonia_A0.txt colonia_A
-
-ES POT OMETRE DE CARA A LA CONTINUACIÓ DE LA INVESTIGACIÓ.
 
 # wandb_fast_reid.py
 
