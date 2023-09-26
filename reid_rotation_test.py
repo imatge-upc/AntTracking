@@ -15,6 +15,11 @@ from models.apparence_bbox_detector import ApparenceBBoxDetector
 
 np.random.seed(0)
 
+WIDTH = 64
+HEIGHT = 64 # 128
+
+YLIM_MAX = 1
+
 
 @contextmanager
 def VideoCapture(input_video):
@@ -31,6 +36,52 @@ def VideoCapture(input_video):
         # Release the video capture object at the end
         capture.release()
 
+def crop_pad(frame, bbox, pad_color, crop_h, crop_w):
+
+    h = int(bbox[3])
+    w = int(bbox[2])
+
+    crop = frame[int(bbox[1]) : int(bbox[1]) + h, int(bbox[0]) : int(bbox[0]) + w, :]
+    
+    if h > crop_h:
+        excess = h - crop_h
+        crop = crop[excess // 2 : excess // 2 + crop_h, :, :]
+        h = crop_h
+    
+    if w > crop_w:
+        excess = w - crop_w
+        crop = crop[:, excess // 2 : excess // 2 + crop_w, :]
+        w = crop_w
+    
+    if h < crop_h or w < crop_w:
+        pad_h = (crop_h - h) // 2
+        pad_w = (crop_w - w) // 2
+        pad = ((pad_h, crop_h - h - pad_h), (pad_w, crop_w - w - pad_w))
+        
+        crop = np.stack([np.pad(crop[:, :, c], pad, mode='constant', constant_values=pad_color[c]) for c in range(3)], axis=2)
+    
+    crop = np.moveaxis(crop, [0, 1, 2], [1, 2, 0])
+    return crop
+
+def pad_reshape(frame, bbox, pad_color, crop_h, crop_w):
+
+    h = int(bbox[3])
+    w = int(bbox[2])
+
+    crop = frame[int(bbox[1]) : int(bbox[1]) + h, int(bbox[0]) : int(bbox[0]) + w, :]
+
+    ar = crop_h / crop_w
+    
+    pad_h = int((w * ar - h) // 2)
+    pad_w = int((h / ar - w) // 2)
+    pad = ((pad_h, int(w * ar - h - pad_h)), (0, 0)) if h < w * ar else ((0, 0), (pad_w, int(h / ar - w - pad_w)))
+    
+    crop = np.stack([np.pad(crop[:, :, c], pad, mode='constant', constant_values=pad_color[c]) for c in range(3)], axis=2)
+
+    crop = cv.resize(crop, (crop_w, crop_h), interpolation=cv.INTER_AREA)
+
+    crop = np.moveaxis(crop, [0, 1, 2], [1, 2, 0])
+    return crop
 
 def rotate(image, angle, center=None, scale=1.0):
     (h, w) = image.shape[:2]
@@ -48,8 +99,6 @@ def crop_pad_rotations(frame, bbox, background_color, height, width, axis):
 
     output = []
     for rot in axis:
-
-        img = np.moveaxis(np.full((height, width, len(background_color)), background_color), [0, 1, 2], [1, 2, 0])
         
         h = int(min(bbox[3], height))
         w = int(min(bbox[2], width))
@@ -64,33 +113,37 @@ def crop_pad_rotations(frame, bbox, background_color, height, width, axis):
         h = int(min(deltas[1], height))
         w = int(min(deltas[0], width))
 
-        crop = rot_frame[int(center[1] - h / 2) : int(center[1] + h / 2), int(center[0] - w / 2) : int(center[0] + w / 2), :]
-        h = crop.shape[0]
-        w = crop.shape[1]
+        bbox = np.array([int(center[0] - w / 2), int(center[1] - h / 2), w, h])
+        crop = crop_pad(rot_frame, bbox, background_color, height, width)
 
-        start_h = int(height // 2 - h // 2)
-        start_w = int(width // 2 - w // 2)
-        img[:, start_h : start_h + h, start_w : start_w + w] = np.moveaxis(crop, [0, 1, 2], [1, 2, 0])
-
-        output.append(img)
+        output.append(crop)
     
     return output
 
-def crop_pad(frame, bbox, background_color, height, width):
+def pad_reshape_rotations(frame, bbox, background_color, height, width, axis):
 
-    img = np.moveaxis(np.full((height, width, len(background_color)), background_color), [0, 1, 2], [1, 2, 0])
+    output = []
+    for rot in axis:
+        
+        h = int(min(bbox[3], height))
+        w = int(min(bbox[2], width))
+
+        center = np.array((bbox[0] + w/2, bbox[1] + h/2))
+
+        rot_frame, M = rotate(frame, rot, center.tolist())
+        #origin = np.dot(bbox[:2] - center, M).astype(int)[:2] + center
+
+        deltas = bbox[2:4] * np.abs(np.cos(np.deg2rad(rot))) + bbox[4:2:-1] * np.abs(np.sin(np.deg2rad(rot)))
+        deltas = deltas.astype(int)
+        h = int(min(deltas[1], height))
+        w = int(min(deltas[0], width))
+
+        bbox = np.array([int(center[0] - w / 2), int(center[1] - h / 2), w, h])
+        crop = pad_reshape(rot_frame, bbox, background_color, height, width)
+
+        output.append(crop)
     
-    h = int(min(bbox[3], height))
-    w = int(min(bbox[2], width))
-
-    start_h = int(height // 2 - h // 2)
-    start_w = int(width // 2 - w // 2)
-
-    crop = frame[int(bbox[1]) : int(bbox[1]) + h, int(bbox[0]) : int(bbox[0]) + w, :] #.reshape(len(background_color), h, w)
-
-    img[:, start_h : start_h + h, start_w : start_w + w] = np.moveaxis(crop, [0, 1, 2], [1, 2, 0])
-    
-    return img
+    return output
 
 def ant_with_itself(input_video, seq_dets, apparence_model_applier, frame_ids, axis):
     seq_dets_iter = iter(seq_dets)
@@ -108,7 +161,8 @@ def ant_with_itself(input_video, seq_dets, apparence_model_applier, frame_ids, a
 
             bbox = next(seq_dets_iter)
             background_color = np.mean(frame, (0, 1))
-            inputs = torch.Tensor(np.stack(crop_pad_rotations(frame, bbox[2:], background_color, 128, 64, axis), axis=0))
+            # inputs = torch.Tensor(np.stack(crop_pad_rotations(frame, bbox[2:], background_color, HEIGHT, WIDTH, axis), axis=0))
+            inputs = torch.Tensor(np.stack(pad_reshape_rotations(frame, bbox[2:], background_color, HEIGHT, WIDTH, axis), axis=0))
 
             feats = apparence_model_applier(inputs)
 
@@ -150,8 +204,10 @@ def ant_with_another(input_video, seq_dets1, seq_dets2, apparence_model_applier,
             background_color1 = np.mean(frame1, (0, 1))
             background_color2 = np.mean(frame2, (0, 1))
 
-            base_input = torch.Tensor(crop_pad(frame2, bbox2[2:], background_color2, 128, 64)[np.newaxis, :])
-            rotation_inputs = torch.Tensor(np.stack(crop_pad_rotations(frame1, bbox1[2:], background_color1, 128, 64, axis), axis=0))
+            # base_input = torch.Tensor(crop_pad(frame2, bbox2[2:], background_color2, HEIGHT, WIDTH)[np.newaxis, :])
+            # rotation_inputs = torch.Tensor(np.stack(crop_pad_rotations(frame1, bbox1[2:], background_color1, HEIGHT, WIDTH, axis), axis=0))
+            base_input = torch.Tensor(pad_reshape(frame2, bbox2[2:], background_color2, HEIGHT, WIDTH)[np.newaxis, :])
+            rotation_inputs = torch.Tensor(np.stack(pad_reshape_rotations(frame1, bbox1[2:], background_color1, HEIGHT, WIDTH, axis), axis=0))
 
             base = apparence_model_applier(base_input)[0]
             rotation_feats = apparence_model_applier(rotation_inputs)
@@ -242,7 +298,7 @@ if __name__ == '__main__':
     ax1.plot(rad_axis, mean_dist)
     ax1.plot(rad_axis, min_dist)
     ax1.plot(rad_axis, max_dist)
-    ax1.set_ylim([0, 0.02])
+    ax1.set_ylim([0, YLIM_MAX])
     ax1.grid(True)
     ax1.legend(['mean', 'min', 'max'])
     ax1.set_title(f'Ant crop compared with itself rotated\n(experiment done for {num_imgs} detections)')
@@ -252,7 +308,7 @@ if __name__ == '__main__':
     ax2.plot(rad_axis, mean_dist)
     ax2.plot(rad_axis, min_dist)
     ax2.plot(rad_axis, max_dist)
-    ax2.set_ylim([0, 0.02])
+    ax2.set_ylim([0, YLIM_MAX])
     ax2.grid(True)
     ax2.legend(['mean', 'min', 'max'])
     ax2.set_title(f'Ant crop compared with another ant rotated\n(experiment done for {num_imgs} pairs of different identities)')

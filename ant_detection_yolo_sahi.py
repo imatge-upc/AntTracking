@@ -30,7 +30,7 @@ def VideoCapture(input_video):
 
 if __name__ == '__main__':
     # read arguments
-    input_video, detection_file, weights_path, imgsz, stop_frame, conf = parse_args(sys.argv)
+    input_video, detection_file, weights_path, imgsz, stop_frame, conf, initial_frame = parse_args(sys.argv)
 
     # Ensamble the Detector
     detection_model = AutoDetectionModel.from_pretrained(
@@ -59,15 +59,17 @@ if __name__ == '__main__':
 
 
     # Apply the model
-    fr = 0
+    fr = initial_frame
     results = []
     with VideoCapture(input_video) as capture:
-        last_frame = int(capture.get(cv.CAP_PROP_FRAME_COUNT)) if stop_frame <= 0 else min(int(capture.get(cv.CAP_PROP_FRAME_COUNT)), stop_frame)
+        capture.set(cv.CAP_PROP_POS_FRAMES, initial_frame - 1)
+        last_frame = int(capture.get(cv.CAP_PROP_FRAME_COUNT)) if stop_frame <= 0 else min(int(capture.get(cv.CAP_PROP_FRAME_COUNT)), initial_frame + stop_frame)
 
-        while stop_frame <= 0 or fr <= stop_frame:
+        while stop_frame <= 0 or fr < initial_frame + stop_frame:
             fr = fr + 1
             
-            if (fr == 1) or (fr == 5) or (fr == 10) or (fr == 25) or (fr == 50) or (fr % 100 == 0):
+            seen = fr - initial_frame
+            if (seen == 1) or (seen == 5) or (seen == 10) or (seen == 25) or (seen == 50) or (seen % 100 == 0):
                 print (f'Processing frame {fr} / {last_frame}', file=sys.stderr)
 
             _, frame = capture.read()
@@ -85,5 +87,6 @@ if __name__ == '__main__':
                 detection_text = ''.join([MOTDet_line(fr, bbox) for bbox in bboxes])
                 results.append(detection_text)
     
-    with open(detection_file, 'w') as f:
+    mode = 'a' if initial_frame > 1 else 'w'
+    with open(detection_file, mode) as f:
         f.writelines(results)
