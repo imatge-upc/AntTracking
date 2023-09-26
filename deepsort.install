@@ -1,0 +1,42 @@
+
+module load cuda/11.7 cudnn/8.1 gcc/7 cmake/3.23.0
+
+virtualenv --python=python3.9 ~/venv/deepsort
+source ~/venv/deepsort/bin/activate
+
+pip install torch torchvision
+pip install yacs
+pip install tensorboard
+pip install gdown
+pip3 install -U scikit-learn
+pip install termcolor
+pip install tabulate
+pip install swig
+pip install faiss-gpu
+pip install Cython
+
+
+cd external/YOLOX/
+# Editar requirements.txt para tener versiones >= en lugar de ==
+pip install -r requirements.txt && python setup.py develop
+
+cd ../deep-person-reid/
+pip install -r requirements.txt && python setup.py develop
+cd ../fast_reid/
+pip install -r docs/requirements.txt
+
+cd fastreid/evaluation/rank_cylib; make all
+cd ../../../../../
+
+
+# Download weights from https://drive.google.com/drive/folders/1cCOx_fadIOmeU4XRrHgQ_B5D7tEwJOPx?usp=sharing into external/weights (do NOT untar the .pth.tar YOLOX files) 
+
+
+# Coment lines from 412 to 415 of trackers/integrated_ocsort_embedding/ocsort.py (CMC)
+
+# Deep-OC-SORT/trackers/integrated_ocsort_embedding/embedding.py line 45 "np.int" into "int"
+
+
+ln -s external/adaptors/fastreid_adaptor.py fastreid_adaptor.py
+# Hardwire your model config and weights in the fastreid_adaptor.py in order to use it
+
