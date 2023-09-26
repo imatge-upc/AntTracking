@@ -1,3 +1,4 @@
+# Adaptat del codi de Sigrid Vila
 
 from docopt import docopt
 import numpy as np

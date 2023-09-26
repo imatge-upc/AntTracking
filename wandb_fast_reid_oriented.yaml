@@ -6,7 +6,7 @@ command:
   - "--gres=gpu:4"
   - "--mem"
   - "128G"
-  - "--time=2:00:00"
+  - "--time=4:00:00"
   - bash
   - ${program}
   - "--config-file=./fastreid_configs/Market1501/bagtricks_R50.yml"

@@ -8,7 +8,7 @@ import time
 import torch
 from torchvision.models import vit_b_32 as VisionTransformer
 
-from docopts.help_apparence_tracks import parse_args
+from docopts.help_appearance_tracks import parse_args
 from models.deepsort_utils.fastreid_adaptor import FastReID
 from models.deepsort_utils.feature_extractor import FeatureExtractor
 from models.apparence_bbox_detector import ApparenceBBoxDetector

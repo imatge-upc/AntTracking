@@ -1,9 +1,9 @@
 
+# Adaptat del codi de https://www.kaggle.com/code/chenyc15/mean-average-precision-metric
+
 from docopt import docopt
 import numpy as np
-import os
 import sys
-import torch
 
 
 def iou(box1, box2):
@@ -59,7 +59,7 @@ def map_iou(boxes_true, boxes_pred, scores, thresholds=[0.4, 0.45, 0.5, 0.55, 0.
         m = tp / (tp + fn + fp)
         map_total += m
     
-    total = len(boxes_pred) + len(matched_bt)
+    #total = len(boxes_pred) + len(matched_bt)
     return map_total / len(thresholds), fn, fp, tn, tp
 
 DOCTEXT = f""" 
