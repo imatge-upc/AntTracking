@@ -1,3 +1,24 @@
+DATA/
+OUTPUT/
+*.zip
+runs/
+bus.jpg
+nohup.out
+nohup*.out
+nohup*
+wandb/
+YOLOv8/
+.nfs*
+yolov8n.pt
+datasets/
+logs/
+*.mp4
+DATA
+OUTPUT
+YOLOv8
+runs
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
