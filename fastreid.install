@@ -1,0 +1,28 @@
+
+module load cuda/11.7 gcc/7 cmake/3.23.0
+
+virtualenv --python=python3.6 ~/venv/fastreid
+source ~/venv/fastreid/bin/activate
+
+pip install torch torchvision==0.10.0
+pip install yacs
+pip install tensorboard
+pip install gdown
+pip3 install -U scikit-learn
+pip install termcolor
+pip install tabulate
+pip install swig
+pip install faiss-gpu
+pip install Cython
+
+cd ~/fast-reid/
+pip install -e .
+pip install opencv-python==4.5.3.56 # or pip install opencv-python --verbose
+srun --gres=gpu:1 --mem 16G --time=10:00:00 pip install --no-cache-dir -r docs/requirements.txt
+
+cd fastreid/evaluation/rank_cylib; make all
+
+pip install wandb
+pip install docopt
+pip install pandas
+
