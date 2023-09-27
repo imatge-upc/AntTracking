@@ -6,6 +6,10 @@ This code is intended to detect and track ants over a white table.
 
 El codi de la primera etapa de la recerca esta a la branca Ignasi, en aquesta branca s'ha filtrat alguns scripts que s'ha considerat que no s'utilitzaran en etapes futures.
 
+Els videos, datasets, outputs, etc estan a:
+* [TSC Drive Ramon](https://drive.tsc.upc.edu/index.php/s/f545rLJCdqGyYye?path=%2F)
+* [OneDrive Ignasi](https://upcbcntech-my.sharepoint.com/:f:/g/personal/ignasi_nogueiras_office365_estudiantat_upc_edu/EhuKd08N809EsRrZpJPiS9gBaIbdCgtlYNG79Z7MwsC4-A?e=EXthGK) (EL CONTINGUT DESAPAREIXERÀ AVIAT!!!)
+
 # Instalació d'entorn
 
 L'entorn habitual es "**ants**", també hi ha l'entorn "fastreid" que pot ser útil i l'entorn "deepsort" que permet usar el codi dels autors de "deepocsort" (el nom deepsort en lloc de deepocsort es un despiste).
