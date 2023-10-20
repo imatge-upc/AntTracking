@@ -1,0 +1,127 @@
+
+\section{Results}
+
+{
+    This section will present and discuss the results using the best models found and the results of the experiments explained at the previous section. 
+}
+
+{
+    The results are based on 150 frames (10 seconds) from the video with a tray and 87 ants. 
+    This source video was not used neither in the training or validation of any subsystem of the tracking model. 
+    The annotations where made as accurately as possible using \ac{CVAT}.
+}
+
+\needspace{0.25\textheight}
+\subsection{Detection Training}
+
+\input{06-1_detection_training.tex}
+\FloatBarrier
+
+\needspace{0.25\textheight}
+\subsection{Detection Results}
+
+{
+    In object tracking, the selection of a detection model significantly impacts precise location estimation. 
+    Table \ref{tab:detection-comparison} reinforces the rationale behind the chosen detection model by comparing its mean average precision, precision and recall with other trained models and the background extraction model. 
+}
+
+\begin{table}[H]
+    \centering
+    \caption[Detectors mAP Comparison]{ \footnotesize Comparison of detectors \ac{mAP} on the testing video when the minimum confidence threshold is 0.4.}
+    \label{tab:detection-comparison}
+
+    \begin{tabularx}{\textwidth}{
+        @{\hspace{0.025\textwidth}}
+        >{\raggedright\arraybackslash}X
+        >{\centering\arraybackslash}p{0.175\textwidth}|
+        >{\centering\arraybackslash}p{0.175\textwidth}|
+        >{\centering\arraybackslash}p{0.175\textwidth}|
+        >{\centering\arraybackslash}p{0.175\textwidth}
+        @{\hspace{0.025\textwidth}}
+    }
+        \toprule
+        \textbf{Model Name} & \textbf{mAP@50} & \textbf{mAP@50-95} & \textbf{Precision} & \textbf{Recall} \\
+        \midrule
+        \midrule
+        Background extraction & 21\% & 8\% & 46\% & 28\% \\
+        YOLOv8n & 30\% & 15\% & 48\% & 44\% \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+{
+    The data unequivocally demonstrates the superiority of YOLOv8n over the background extraction baseline across all evaluated aspects. 
+    Particularly noteworthy is the substantial improvement in recall. 
+}
+
+{
+    However, comparing the metrics on this testing set with the perfect results in the validation set depicted in Figure \ref{fig:detector_precision_recall_f1}, 
+    it can be seen that the model's ability to generalize or the dissimilarity of the test set compared to the training and the validation sets should be considered. 
+    Further improvements may be possible with a larger dataset.
+}
+
+
+\needspace{0.25\textheight}
+\subsection{Appearance Training}
+
+\input{06-2_appearance_training.tex}
+\FloatBarrier
+
+\needspace{0.25\textheight}
+\subsection{Appearance Tests Results} % 
+
+\input{06-3_appearance_test_results.tex}
+\FloatBarrier
+
+\needspace{0.25\textheight}
+\subsection{Tracking Results} 
+
+{
+    Finally, after testing the final models, using the different detectors and tracking algorithms, and manually searching for good hyperparameters, the results can be seen on Table \ref{tab:trackers-comparison}.
+}
+
+\begin{table}[H]
+    \centering
+    \caption[Detectors mAP Comparison]{ \footnotesize Comparison of detectors \ac{mAP}, ``Background extraction" is reduced into fgbg.}
+    \label{tab:trackers-comparison}
+
+    \begin{tabularx}{\textwidth}{
+        @{\hspace{0.001\textwidth}}
+        >{\raggedright\arraybackslash}X
+        >{\centering\arraybackslash}p{0.1\textwidth}|
+        >{\centering\arraybackslash}p{0.1\textwidth}|
+        >{\centering\arraybackslash}p{0.1\textwidth}|
+        >{\centering\arraybackslash}p{0.1\textwidth}
+        @{\hspace{0.001\textwidth}}
+    }
+        \toprule
+        \textbf{Model Name} & \textbf{DetA} & \textbf{LocA} & \textbf{AssA} & \textbf{HOTA} \\
+        \midrule
+        \midrule
+        fgbg - SORT & 20\% & 70\% & 36\% & 27\% \\
+        fgbg - OC-SORT & 20\% & 71\% & 40\% & 28\% \\
+        yolo - SORT & \textbf{40\%} & 74\% & 61\% & 48\% \\
+        yolo - Deep SORT & 08\% & 71\% & 01\% & 03\% \\
+        \textbf{yolo - OC-SORT} & \textbf{40\%} & 76\% & 63\% & \textbf{49\%} \\
+        yolo - Deep OC-SORT & \textbf{40\%} & 74\% & 62\% & 48\% \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+{
+    The usage of the interpolator (\ac{GSI}) did not affect the results, and the \ac{PCA} correction on the ant trajectory slightly deteriorate them.
+}
+
+{
+    From Table \ref{tab:trackers-comparison} the worse case is the Deep SORT, 
+    which only uses appearance to resolve split tracks and fails to associate the observatons, 
+    and the best case is the OC-SORT, which discards the appearance model. 
+    Additionally, the detector is the component with a strongest influence on the final results.
+}
+
+\clearpage
+
+\subsection{Tracking Results analysis}
+
+\input{06-4_tracking_results_analysis.tex}
+\FloatBarrier
