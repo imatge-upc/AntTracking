@@ -1,0 +1,199 @@
+
+{
+    \ac{OC-SORT}\cite{cao2023observation} is a 2021 model that builds upon the BYTE model. 
+    It enhances the motion model, introduces an improved location score, and adds a third association stage, 
+    excluding the appearance model for research purposes.
+}
+
+\paragraph{Motion model}
+
+{
+    In \ac{OC-SORT}, the Kalman filter is improved by freezing its state until a new observation is assigned. 
+    The model updates each skipped frame using a linear model when new observations arrive (observation centric), 
+    other models update their state with their own estimations (estimation centric). 
+    \ac{SORT} is able to roughly follow a non-linear motion if the time between observations is short enough, 
+    \ac{OC-SORT} reduce the estimation noise originated on missed frames.
+} 
+
+\paragraph{Location score}
+
+{
+    The location score from \ac{OC-SORT} is a global direction metric. 
+    To compute this metric, \ac{OC-SORT} performs a search of the most relevant older observation:
+    the oldest observation from the last $\Delta t=3$ frames, or the newest observation available.
+    The relevant observation and the newest observation available are used to obtain the track global direction vector:
+}
+
+\begin{equation}
+    \label{eqn:track direction}
+    direction = \frac{(z_{new} - z_{old})}{||(z_{new} - z_{old})||}
+\end{equation}
+
+{
+    A potential global direction is computed using the set of high score detections as potential new observations. 
+    At the end, each track has its own global direction and the hypothetical global direction in the case of using a certain new detection.
+}
+
+%\begin{subequations}
+%    \begin{align}
+%        \mathbf{\Delta x_{tracks}} &= \begin{bmatrix}
+%            direction_{1}[x] & direction_{1}[x] & \hdots & direction_{1}[x] \\
+%            direction_{2}[x] & direction_{2}[x] & \hdots & direction_{2}[x] \\
+%            \vdots & \vdots & \vdots & \vdots \\
+%            direction_{M}[x] & direction_{M}[x] & \hdots & direction_{M}[x]
+%            \end{bmatrix}
+%        \label{eqn:dirction x tracks} \\[0.5cm]
+%        \mathbf{\Delta y_{tracks}} &= \begin{bmatrix} \\
+%            direction_{1}[y] & direction_{1}[y] & \hdots & direction_{1}[y] \\
+%            direction_{2}[y] & direction_{2}[y] & \hdots & direction_{2}[y] \\
+%            \vdots & \vdots & \vdots & \vdots \\
+%            direction_{M}[y] & direction_{M}[y] & \hdots & direction_{M}[y]
+%            \end{bmatrix}
+%        \label{eqn:dirction y tracks} \\[0.5cm]
+%        \mathbf{\Delta x_{detections}} &= \begin{bmatrix}
+%            direction_{1,1}[x] & direction_{1,2}[x] & \hdots & direction_{1,N}[x] \\
+%            direction_{2,1}[x] & direction_{2,2}[x] & \hdots & direction_{2,N}[x] \\
+%            \vdots & \vdots & \vdots & \vdots \\
+%            direction_{M,1}[x] & direction_{M,2}[x] & \hdots & direction_{M,N}[x]
+%            \end{bmatrix}
+%            \label{eqn:dirction x detections} \\[0.5cm]
+%            \mathbf{\Delta y_{detections}} &= \begin{bmatrix}
+%                direction_{1,1}[y] & direction_{1,2}[y] & \hdots & direction_{1,N}[y] \\
+%                direction_{2,1}[y] & direction_{2,2}[y] & \hdots & direction_{2,N}[y] \\
+%                \vdots & \vdots & \vdots & \vdots \\
+%                direction_{M,1}[y] & direction_{M,2}[y] & \hdots & direction_{M,N}[y]
+%            \end{bmatrix}
+%            \label{eqn:dirction y detections}
+%    \end{align}
+%\end{subequations}
+
+{
+    These directions serve to obtain the angular distance $\mathbf{\Delta\phi}$ (from 0 to $\pi$) between the track and the detections trajectories, 
+    later, it is transformed into a normalized angular score (from $-0.5$ to $0.5$) with the equation \ref{eqn:angular score}.
+}
+
+
+\begin{equation}
+    \label{eqn:angular score}
+%    \begin{split}
+%        &\mathbf{\Delta\phi} = arccos(\Delta x_{tracks} \odot \Delta x_{detections} + \Delta y_{tracks} \odot \Delta y_{detections})\\
+%        &\mathbf{\phi_{score}} = 0.5 - \left(\frac{|\mathbf{\Delta\phi}|}{\pi}\right)
+%    \end{split}
+    \mathbf{\phi_{score}} = 0.5 - \left(\frac{|\mathbf{\Delta\phi}|}{\pi}\right)
+\end{equation}
+
+\needspace{0.1\textheight}
+
+\paragraph{Associator}
+
+{
+    During the association step, \ac{OC-SORT} categorizes the detections in three groups:
+}
+
+\begin{enumerate}
+    \item Initially high score detections.
+    \item Initially low score detections.
+    \item High score associations that were not successfully associated
+\end{enumerate}
+
+{
+    The first step performs a linear assignment with the Hungarian algorithm. 
+    Using a weighted sum of the \ac{IoU} and the angular score from equation \ref{eqn:angular score} 
+    pondered by the detections confidence ($c_{n}$) using the Hadamard product\footnote{The notation for element-wise product will be $\odot$ because $\oslash$ could be used for element-wise division.} as the cost:
+}
+
+\begin{equation}
+    \label{eqn:detection confidence matrix}
+    \mathbf{confidence_{detections}} = \begin{bmatrix}
+        c_{1} & c_{2} & \hdots & c_{N} \\
+        c_{1} & c_{2} & \hdots & c_{N} \\
+        \vdots & \vdots & \vdots & \vdots \\ 
+        c_{1} & c_{2} & \hdots & c_{N}
+    \end{bmatrix}
+\end{equation}
+
+\begin{equation}
+    \label{eqn:OC-SORT first association cost}
+    cost_{1} = -\mathbf{IoU} - \lambda \cdot (\mathbf{\phi_{score}} \odot \mathbf{confidence_{detections}})
+\end{equation}
+
+{
+    At the end of the first stage, a threshold on the \ac{IoU} is applied.
+}
+
+{
+    The second association stage is the same as the \ac{BYTE} model (section \ref{sec:BYTE}): 
+    the low confidence detections are assigned with a second location metric and threshold.
+}
+ 
+{
+    The third stage of \ac{OC-SORT} is the same as the second stage; 
+    however, it uses the last known observation of the remaining unmatched tracks and the remaining high confidence detections.
+}
+
+\subsubsection{Location metrics from OC-SORT}
+
+{
+    While not originally part of OC-SORT, the publicly available code from the OC-SORT authors includes a range of location metrics. 
+    These metrics were initially developed for object detection but have found utility in object tracking scenarios, 
+    particularly in improving the accuracy of associations compared to traditional \ac{IoU} by extending the overlapping ratio with a nearness ratio. 
+    This section presents an exploration of three location metrics utilized in OC-SORT's codebase.
+}
+
+\paragraph{GIoU} 
+
+{
+    The \acl{GIoU}\cite{Rezatofighi_2018_CVPR} is a metric that extends the \ac{IoU} into the negatives and smoothen it by accounting for both positive and negative scenarios.
+    However, it scores positively bigger boxes. 
+    The upgrade consist in subtracting a term computed from the enclosure area and the complementary of the union with the enclosure area:
+}
+
+
+\begin{equation}
+    \label{eqn:GIoU}
+%    \begin{split}
+%        GIoU(A, B) &= IoU(A, B) - \frac{|enclosure(A, B)| - |A \cup B|}{|enclosure(A, B)|} \\[0.25cm]
+%        with \; |enclosure(A, B)| &= (max_{x2}(A, B) - min_{x1}(A, B)) \cdot (max_{y2}(A, B) - min_{y1}(A, B))
+%    \end{split}
+    GIoU(A, B) = IoU(A, B) - \frac{|enclosure(A, B)| - |A \cup B|}{|enclosure(A, B)|}
+\end{equation}
+
+
+
+\paragraph{DIoU} 
+
+{
+    The \acl{DIoU}\cite{Zheng_Wang_Liu_Li_Ye_Ren_2020} is a metric similar to the \ac{GIoU}, but with a different approach. 
+    It replace the previous enclosure distance term with a the novel metric called \ac{IoO}. 
+    \ac{IoO} is computed as the center distance normalized by the enclosure diagonal lenght:
+}
+
+\begin{equation}
+    \label{eqn:DIoU}
+    \begin{split}
+        D&IoU(A, B) = IoU(A, B) - \frac{InnerDistance(A, B)}{OuterDistance(A, B)} \\[0.25cm]
+        with& \; InnerDistance(A, B) = d(center(A), center(B)) \\[0.25cm]
+        with& \; OuterDistance(A, B) = d(BottomRight(AB), UpperLeft(AB)) \\[0.25cm]
+%        with& \; UpperLeft(AB) = [min_{x1}(A, B), min_{y1}(A, B)] \\[0.25cm]
+%        with& \; BottomRight(AB) = [max_{x2}(A, B), max_{y2}(A, B)] \\[0.25cm]
+%        with& \; d(P_{1}, P_{2}) = \sqrt{(P_{2_{x}} - P_{1_{x}})^{2} + (P_{2_{x}} - P_{1_{x}})^{2}}\\[0.25cm]
+        &\text{using AB as a shortened notation for enclosure(A, B)}
+    \end{split}
+\end{equation}
+
+\paragraph{CIoU}
+
+{
+    The \acl{CIoU}\cite{zheng2021ciou}, also from the same authors as \ac{DIoU}, further refines object association by accounting for variations in aspect ratios. 
+    This new feature requires the computation of an aspect ratio distance, the authors uses a normalized quadratic angular distance, and an additional cost value based in the IoU. 
+    The \ac{CIoU} score is defined as:
+}
+
+\begin{equation}
+    \label{eqn:CIoU}
+    \begin{split}
+        C&IoU(A, B) = DIoU(A, B) - AspectRatioDistance(A, B) \cdot AspectRatioCost(A, B) \\[0.25cm]
+        with& \; AspectRatioDistance(A, B) = \frac{4}{\pi^2} \cdot \left(arctan\left(\frac{B_{w}}{B_{h}}\right) - arctan\left(\frac{A_{w}}{A_{h}}\right)\right)^{2} \\[0.25cm]
+        with& \; AspectRatioCost(A, B) = \frac{AspectRatioDistance(A, B)}{AspectRatioDistance(A, B) + 1 - IoU}
+    \end{split}
+\end{equation}

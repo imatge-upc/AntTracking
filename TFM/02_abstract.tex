@@ -1,0 +1,43 @@
+
+\section*{Abstract}
+
+{
+    Understanding the behavior of ants, their interactions and responses to various environmental elements offer a unique perspective on social structures. 
+    The ability to track ants movements accurately within a controlled laboratory environment is a valuable tool for biologists. 
+}
+
+{
+    This master's thesis explores ant tracking, a multiple object tracking problem, using advanced computer vision techniques.
+}
+
+{
+    One primary challenge is the scarcity of suitable data with accurate annotations. 
+    This work addresses this issue by collecting new raw data and developing annotation tools.
+}
+
+{
+    A YOLOv8n detector, with a validation mAP@50-95 of 85.5\%, is trained and integrated into the tracking models. 
+    During testing, the detection performance decreases, with a mAP@50-95 of 15\%. 
+    This significant drop, despite its notably low value, played a crucial role in enhancing the overall tracking accuracy.
+}
+
+{
+    A BoT appearance descriptor for re-identification, 
+    achieving a validation Rank-1 accuracy of 74\%, is trained and integrated into the tracking models. 
+    Subsequent testing within a crowded tracking environment, identifies a bad performance, leading to its exclusion from the final tracker. 
+    However, the analysis highlights the appearance model's potential for future investigation.
+}
+
+{
+    The results, obtained using an OC-SORT tracker, 
+    establish a baseline for future research, achieving a 49\% improvement in HOTA for the testing set.
+}
+
+{
+    In conclusion, this master's thesis lays the foundation for future research by preparing data, 
+    identifying key components, and establishing an initial baseline.
+}
+
+{
+    The codebase of this project is accessible through the following GitHub repository link\footnote{\url{https://github.com/imatge-upc/AntTracking/tree/Ignasi}}
+}

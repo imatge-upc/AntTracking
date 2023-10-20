@@ -1,0 +1,34 @@
+
+% Include PCA Model and data analysis
+
+{
+    For the tracking model development, a proxy detector that reads the output of the previous detection models or appearance model was used. It removes the time and memory needed for video loading and reduce the time used on redundant computations.
+}
+
+{
+    The first model tested was a SORT model with a downgraded detector, the background extraction model (see Figure \ref{fig:fgbg_code}). 
+    The next model tested was the OC-SORT model with the same the background extraction model as the model.\\
+    The code from these trackers was reimplemented to gain understanding and flexibility to apply modifications.
+}
+
+{
+    Afterwards, a manual annotation was performed to define the project baseline. 
+    This annotated data allowed the analysis of the ants behavior, by instance, the displacement per frame, the time of potential occlusions, the location metrics distribution, etc. 
+    It also allowed the study on the error distribution: the velocity and angular errors from the Kalman estimations.
+}
+
+{
+    Before training the deep learning based detector, a test to improve the Kalman filter from the OC-SORT model with an intuition was developed. 
+    The intuition consisted on ``the ants should move towards the direction their body points". 
+    It was implemented by instantaneously modifying the direction of the estimation (less than 180º) using \ac{PCA} on the ants body. 
+    %A study on the error distribution was performed and compared with the previous trackers results.
+    To reduce the input loading time, the angle obtained through \ac{PCA} was included on the MOT file.
+}
+
+{
+    With a better detector, the SORT and OC-SORT model were tested again.
+}
+
+{
+    Finally, the Deep SORT model was reimplemented and the Deep OC-SORT github code was downloaded. These models were tested with the trained appearance model.
+}

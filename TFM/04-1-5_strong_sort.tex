@@ -1,0 +1,83 @@
+
+{
+    Strong SORT\cite{du2023strongsort} is a model published in 2022, 
+    it upgrades the Deep SORT model, 
+    introducing several notable features and improvements:
+}
+
+\begin{itemize}
+    \item {
+        \textbf{Advanced Modules}: 
+        In contrast to Deep SORT, which employs a Faster R-CNN\cite{7485869, s23156887} for detection and a simple \ac{CNN} for appearance modeling, 
+        Strong SORT employs more advanced models for both tasks. 
+        Specifically, it utilizes YOLOX-X for detection and a \ac{BoT}\cite{Luo_2019_CVPR_Workshops} for appearance.
+    }
+    \item {
+        \textbf{\ac{EMA}}: 
+        Instead of maintaining a memory of the last 100 instances for the appearance model of each track, Strong SORT uses an exponential moving average.
+    }
+    \item {
+        \textbf{\ac{ECC}}: 
+        While Strong SORT includes a camera movement compensation model, 
+        this feature is not relevant to the objectives of this project.
+    }
+    \item {
+        \textbf{NSA Kalman}: 
+        An improvement of the Kalman filter that estimates the measurements noise covariance using the detection confidence score.
+    }
+    \item {
+        \textbf{Motion Cost}: 
+        While Deep SORT assigns a weight of 1 on appearance and 0 on motion for track association, 
+        Strong SORT suggests a weight of 0.98 on appearance and 0.02 on motion.
+    }
+    \item {
+        \textbf{Vanilla Matching}: Strong SORT departs from the policy of prioritizing the recently tracked tracks during matching.
+    }
+    \item {
+        \textbf{AFLink}: 
+        An appearance-free deep learning model to postprocess results by joining tracklets\footnote{Tracklet (neologism): Continuous fragment of a track.}. 
+        Note that it requires a substantial amount of training data.
+    }
+    \item {
+        \textbf{\ac{GSI}}: 
+        A space-temporal interpolator to fill the gaps caused by missing detections. 
+        It employs a Gaussian process regression to model nonlinear motion.
+    }
+\end{itemize}
+
+\paragraph{\acl{GSI}}
+
+{
+    The \ac{GSI} describes the i-th trajectory position $p_{t}$ at the time $t$ as a Gaussian process with kernel $k(x, x')$ and Gaussian noise $\varepsilon$:
+}
+
+\begin{equation}
+    \label{eqn:gaussian trajectory}
+    \begin{split}
+        &p_{t} = f^{(i)}(t) + \varepsilon \\[0.25cm]
+        with \;& f^{(i)} \in GP\left(0,\: k(\cdot,\cdot)\right) \\[0.25cm]
+        with \;& \varepsilon \sim N\left(0,\: \sigma^{2}\right) \\[0.25cm]
+        with \;& k(x, x') = e^{-\frac{||x - x'||^{2}}{2 \cdot \lambda{2}}}
+    \end{split}
+\end{equation}
+
+\needspace{0.1\textheight}
+
+{
+    The predicted nonlinear positions $P^{*}$ (smoothed gap filled track) are obtained by fitting the linear predicted positions $P$ (gap filled track) into the previous Gaussian model trained per each track:
+}
+
+
+\begin{equation}
+    \label{eqn:gaussian trajectory smoothing}
+    \begin{split}
+        &\mathbf{P^{*}} = \mathbf{K(F^{*}, F)} \cdot \left(\mathbf{K(F^{*}, F)} + \sigma^{2} \cdot \mathbf{I}\right)^{-1} \cdot \mathbf{P} \\[0.25cm]
+        with \;& K(\cdot, \cdot) \text{ as the covariance function based on } k(\cdot, \cdot)
+    \end{split}
+\end{equation}
+
+
+{
+    Because this project only uses the \ac{GSI} from Strong SORT, the other features were briefly explained.
+}
+
