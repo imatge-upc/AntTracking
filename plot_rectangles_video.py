@@ -169,7 +169,7 @@ if __name__ == '__main__':
     #capture = cv.VideoCapture(cv.samples.findFileOrKeep(input_video))
     capture = cv.VideoCapture(input_video)
     if not capture.isOpened():
-        print('Unable to open: ' + args.input, file=sys.stderr)
+        print('Unable to open: ' + args['<inputVideo>'], file=sys.stderr)
         exit(0)
 
     # Define the codec and create a video writer object
