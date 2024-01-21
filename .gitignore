@@ -17,6 +17,7 @@ DATA
 OUTPUT
 YOLOv8
 runs
+fastreid
 
 
 # Byte-compiled / optimized / DLL files

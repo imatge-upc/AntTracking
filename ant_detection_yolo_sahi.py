@@ -8,6 +8,7 @@ from sahi.utils.yolov8 import (
 )
 import sys
 import torch
+import time
 
 from docopts.help_ant_detection_yolo_sahi import parse_args 
 
@@ -29,6 +30,7 @@ def VideoCapture(input_video):
 
 
 if __name__ == '__main__':
+    start_time = time.time()
     # read arguments
     input_video, detection_file, weights_path, imgsz, stop_frame, conf, initial_frame = parse_args(sys.argv)
 
@@ -90,3 +92,7 @@ if __name__ == '__main__':
     mode = 'a' if initial_frame > 1 else 'w'
     with open(detection_file, mode) as f:
         f.writelines(results)
+
+    end_time = time.time()  
+    total_time = end_time - start_time  
+    print(f"Overall excution time: {total_time:.2f} seconds\tFrames per second: {stop_frame-initial_frame/total_time}")
