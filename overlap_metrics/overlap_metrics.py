@@ -57,11 +57,9 @@ def box_overlap(box1, box2):
     x1, y1, w1, h1 = box1
     x2, y2, w2, h2 = box2
 
-    # Calcular coordenadas de las esquinas de las cajas
     left1, top1, right1, bottom1 = x1 - w1 / 2, y1 - h1 / 2, x1 + w1 / 2, y1 + h1 / 2
     left2, top2, right2, bottom2 = x2 - w2 / 2, y2 - h2 / 2, x2 + w2 / 2, y2 + h2 / 2
 
-    # Comprobar si las cajas se solapan
     return not (right1 < left2 or left1 > right2 or bottom1 < top2 or top1 > bottom2)
 
 def calculate_iou(box1, box2):
@@ -78,23 +76,18 @@ def calculate_iou(box1, box2):
     x1, y1, w1, h1 = box1
     x2, y2, w2, h2 = box2
 
-    # Calculate coordinates of the intersection area
     intersection_left = max(x1 - w1 / 2, x2 - w2 / 2)
     intersection_top = max(y1 - h1 / 2, y2 - h2 / 2)
     intersection_right = min(x1 + w1 / 2, x2 + w2 / 2)
     intersection_bottom = min(y1 + h1 / 2, y2 + h2 / 2)
 
-    # Calculate area of intersection
     intersection_area = max(0, intersection_right - intersection_left) * max(0, intersection_bottom - intersection_top)
 
-    # Calculate area of both bounding boxes
     box1_area = w1 * h1
     box2_area = w2 * h2
 
-    # Calculate union area
     union_area = box1_area + box2_area - intersection_area
 
-    # Calculate IoU
     iou_score = intersection_area / union_area if union_area > 0 else 0.0
 
     return iou_score
@@ -117,20 +110,28 @@ def txt_creation(txt_overlaps,val_dir,add_ovlps):
                 if add_ovlps: txt.write(str(num_overlaps)+overlaps+"\n")
                 else: txt.write(str(num_overlaps)+"\n")
 
-def is_same_ovlp(bbox_pred, bbox_gt, threshold=0.5):
-    iou_score = calculate_iou(bbox_pred, bbox_gt)
-    return iou_score >= threshold
+def is_same_ovlp(bbox_pred, bbox_gt, threshold=0.8):
+    if isinstance(bbox_pred, (list, tuple)) and len(bbox_pred) == 4 and isinstance(bbox_gt, (list, tuple)) and len(bbox_gt) == 4:
+        x1, y1, w1, h1 = bbox_pred
+        x2, y2, w2, h2 = bbox_gt
+        iou_score = calculate_iou(bbox_pred, bbox_gt)
+        print(f"\t\t\t{iou_score}")
+        return iou_score >= threshold
+    else:
+        # Manejar el caso cuando bbox_pred o bbox_gt no son tuplas válidas
+        return False
 
 def are_same_ovlps(ovlp_pred_pair, ovlp_gt_pair, threshold=0.5):
     ovlp_pred1, ovlp_pred2 = ovlp_pred_pair
     ovlp_gt1, ovlp_gt2 = ovlp_gt_pair
 
     # Check if both overlaps in the pair are considered the same
-    same_ovlp_1 = is_same_ovlp(ovlp_pred1, ovlp_gt1, threshold=threshold)
-    same_ovlp_2 = is_same_ovlp(ovlp_pred2, ovlp_gt2, threshold=threshold)
-
+    same_ovlp_1 = is_same_ovlp(ovlp_pred_pair[0], ovlp_gt_pair[0], threshold=threshold)
+    same_ovlp_2 = is_same_ovlp(ovlp_pred_pair[1], ovlp_gt_pair[1], threshold=threshold)
+    same_ovlp_3 = is_same_ovlp(ovlp_pred_pair[0], ovlp_gt_pair[1], threshold=threshold)
+    same_ovlp_4 = is_same_ovlp(ovlp_pred_pair[1], ovlp_gt_pair[0], threshold=threshold)
     # Return True if both pairs are considered the same, else False
-    return same_ovlp_1 and same_ovlp_2
+    return (same_ovlp_1 and same_ovlp_2) or (same_ovlp_3 and same_ovlp_4)
 
 def extract_positions(input_string):
     # Eliminar caracteres no deseados y dividir la cadena por '] ['
@@ -219,16 +220,15 @@ def compare_overlaps(txt_gt,txt_preds):
 if __name__ == "__main__":
 
     arguments = docopt(__doc__)
-    if arguments['--isGT']=='yes': is_gt=True
-    else: is_gt=False
-    val_dir = f"/home/usuaris/imatge/pol.serra.i.montes/runs/detect/{arguments['<input>']}/preds"
-    txt_overlaps = f"/home/usuaris/imatge/pol.serra.i.montes/TFG/yolo_training/overlap_metrics/all_ants_24_61_43+ant_subset_1_4_6+colonia_640x640/ovlps_{arguments['<input_file>']}.txt"
-    root_dir_results = '/home/usuaris/imatge/pol.serra.i.montes/TFG/yolo_training/overlap_metrics/all_ants_24_61_43+ant_subset_1_4_6+colonia_640x640/'
-    txt_gt = '/home/usuaris/imatge/pol.serra.i.montes/TFG/yolo_training/overlap_metrics/all_ants_24_61_43+ant_subset_1_4_6+colonia_640x640/gt_all_ants_24_61_43+ant_subset_1_4_6+colonia_640x640'
+    root_dir_results = '/home/usuaris/imatge/pol.serra.i.montes/TFG/AntTracking/overlap_metrics/results'
+    dir_preds = arguments['<input_file>']
+    dir_gt = arguments['<gt_file>']
+    txt_ovlp_preds = os.path.join(root_dir_results,"ovlp_metrics_"+dir_gt.split('/')[-3]+".txt")
+    txt_ovlp_gt = os.path.join(root_dir_results,"ovlp_metrics_gt_"+dir_gt.split('/')[-3]+".txt")
     
-    compare_overlaps(txt_gt,txt_overlaps)
-    # if not is_gt: 
-    #     txt_creation(txt_overlaps,val_dir,True)
-    #     compare_overlaps(txt_gt,txt_overlaps)
-    # else:
-    #     txt_creation(gt_overlaps,gt_dir,True)
+    if not os.path.isfile(txt_ovlp_preds) :
+        txt_creation(txt_ovlp_preds,dir_preds,True)
+    if not os.path.isfile(txt_ovlp_gt):
+        txt_creation(txt_ovlp_gt,dir_gt,True)
+
+    compare_overlaps(txt_ovlp_gt,txt_ovlp_preds)
