@@ -1,0 +1,123 @@
+
+command:
+  - "srun"
+  - "-c"
+  - "4"
+  - "--gres=gpu:1,gpumem:24G"
+  - "--mem"
+  - "32G"
+  - "--time=10:00:00"
+  - ${env}
+  - yolo
+  - ${program}
+  - ${args_no_hyphens}
+
+program: train
+
+method: bayes
+
+metric:
+  name: metrics/mAP50-95(B)
+  goal: maximize
+
+parameters:
+  project:
+    value: SS_resize
+  workers:
+    value: 4
+  model:
+    value: yolo11n-seg.pt
+  data:
+    value: ./yolo_seg_UNKNOWN_colors_20241018_1324/yolo_seg_UNKNOWN_colors_20241018_1324.yaml
+  task:
+    value: segment
+  imgsz:
+    value: 2240
+  epochs:
+    value: 500
+
+  batch:
+    distribution: int_uniform
+    min: 2
+    max: 10
+  optimizer:
+    values: ["Adam", "SGD"]
+  lr0:
+    distribution: uniform
+    max: 0.01
+    min: 0.001
+  lrf:
+    distribution: uniform
+    max: 0.001
+    min: 0.0001
+  cos_lr:
+    values:
+      - True
+      - False
+  momentum:
+    distribution: uniform
+    max: 0.974
+    min: 0.9
+  
+  dropout:
+    values: [0.0, 0.25, 0.5, 0.75]
+
+  iou:
+    distribution: uniform
+    min: 0.5
+    max: 1
+
+  hsv_h:
+    distribution: uniform
+    min: 0
+    max: 0.3
+  hsv_s:
+    distribution: uniform
+    min: 0
+    max: 0.5
+  hsv_v:
+    distribution: uniform
+    min: 0
+    max: 0.5
+
+  degrees:
+    distribution: uniform
+    min: 60
+    max: 180
+  translate:
+    distribution: uniform
+    min: 0
+    max: 0.5
+  scale:
+    distribution: uniform
+    min: 0
+    max: 1
+  flipud:
+    distribution: uniform
+    min: 0
+    max: 0.5
+  fliplr:
+    distribution: uniform
+    min: 0
+    max: 0.5
+
+  mosaic:
+    distribution: uniform
+    min: 0
+    max: 1
+  shear:
+    distribution: uniform
+    min: 0
+    max: 15
+  perspective:
+    distribution: uniform
+    min: 0
+    max: 0.001
+  mixup:
+    distribution: uniform
+    min: 0
+    max: 0.12
+  copy_paste:
+    distribution: uniform
+    min: 0
+    max: 1
