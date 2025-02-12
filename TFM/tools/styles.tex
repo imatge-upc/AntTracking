@@ -1,0 +1,84 @@
+
+\colorlet{punct}{red!60!black}
+\definecolor{background}{HTML}{EEEEEE}
+\definecolor{delim}{RGB}{20,105,176}
+\colorlet{numb}{magenta!60!black}
+
+\def\mylstdelim#1#2#3{
+    \def\endlstdelim{\textcolor{#3}{#2}\egroup}
+    \textcolor{#3}{#1}\bgroup\aftergroup\endlstdelim
+}
+
+\lstdefinelanguage{json}{
+    basicstyle=\normalfont\ttfamily,
+    numbers=left,
+    numberstyle=\scriptsize,
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=lines,
+    backgroundcolor=\color{background},
+    moredelim = **[is][{\mylstdelim{[}{]}{delim}}]{[}{]},
+    moredelim = **[is][{\mylstdelim{\{}{\}}{delim}}]{\{}{\}},
+    literate=
+     *{0}{{{\color{numb}0}}}{1}
+      {1}{{{\color{numb}1}}}{1}
+      {2}{{{\color{numb}2}}}{1}
+      {3}{{{\color{numb}3}}}{1}
+      {4}{{{\color{numb}4}}}{1}
+      {5}{{{\color{numb}5}}}{1}
+      {6}{{{\color{numb}6}}}{1}
+      {7}{{{\color{numb}7}}}{1}
+      {8}{{{\color{numb}8}}}{1}
+      {9}{{{\color{numb}9}}}{1}
+      {:}{{{\color{punct}{:}}}}{1}
+      {,}{{{\color{punct}{,}}}}{1}
+}
+
+\lstnewenvironment{bashcode}[1][]{
+    \lstset{
+        basicstyle=\ttfamily,
+        columns=fullflexible,
+        language=bash,
+        keepspaces=true,
+        breaklines=true,
+        breakatwhitespace=true,
+        prebreak=\char`\\, % Example character to indicate a break
+        showstringspaces=false,
+        belowskip=-1em,
+        #1 % Any additional settings you want to pass
+    }
+}{}
+
+%RBG FFD33E / C95D40
+\definecolor{upcorange}{HTML}{FFD33E}
+\hypersetup{allcolors=black}
+
+% probably a good idea for the nomenclature entries:
+\acsetup{
+  first-style=long-short, %footnote,
+  subsequent-style=short,
+  pages/display=all,
+  list/heading=none
+}
+
+%%%% PAGE STYLE %%%%%
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\setlength{\footskip}{68pt}
+\fancyhf{}
+\lhead{\includegraphics[height=1.2cm]{figures/logos/upclogo.png}}
+\rhead{\includegraphics[height=1.2cm]{figures/logos/logo_telecos.png}}
+\rfoot{\thepage{}}
+
+\renewcommand{\footrulewidth}{0.4pt}
+%\futurelet\TMPfootrule\def\footrule{{\color{upcorange}\TMPfootrule}}
+\futurelet\TMPfootrule\def\footrule{{\color{gray!80}\TMPfootrule}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to \headwidth{%
+%\color{upcorange}\leaders\hrule height \headrulewidth\hfill}}
+\color{gray!80}\leaders\hrule height \headrulewidth\hfill}}
+%\renewcommand*\ShowFrameColor{\color{red}}
+
+\usepackage{footmisc}

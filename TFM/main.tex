@@ -1,0 +1,92 @@
+\documentclass[a4paper,12pt]{article}
+
+\input{tools/packages.tex}
+\input{tools/styles.tex}
+\input{tools/acro.tex}
+
+\begin{document}
+
+%%% COVER %%%
+\input{00_cover}
+
+%%% INDEX %%%
+\newpage
+\tableofcontents
+
+%%% REVISION %%%
+\newpage
+\input{01_revision_history}
+\clearpage
+
+%%% ABSTRACT %%%
+\newpage
+\input{02_abstract}
+\clearpage
+
+%%% INTRODUCTION %%%
+\newpage
+\input{03_introduction}
+\clearpage
+
+%%% StateOfTheArt %%%
+\newpage
+\input{04_state_of_the_art}
+\clearpage
+
+%%% METHODOLOGY %%%
+\newpage
+\input{05_methodology}
+\clearpage
+
+%%% RESULTS %%%
+\newpage
+\input{06_result}
+\clearpage
+
+%%% CONCLUSIONS %%%
+\newpage
+\input{07_conclusion}
+\clearpage
+
+%%% FUTURE WORK %%%
+\newpage
+\input{08_future_work}
+\clearpage
+
+%%% BIBLIOGRAPHY %%%
+\newpage
+
+\medskip
+\bibliographystyle{unsrt}
+\bibliography{bibliography.bib}
+
+\clearpage
+
+%%% LISTS %%%
+
+\newpage
+
+\listoffigures
+%\lstlistoflistings
+\listoftables
+
+\newpage
+
+\section*{List of Acronyms}
+\addcontentsline{toc}{section}{List of Acronyms}
+\printacronyms[]
+
+\clearpage
+
+\end{document}
+
+%%% ANNEX %%%
+%\newpage
+
+%\begin{appendices}
+
+%{Appendices may be included in your thesis but it is not a requirement.}
+
+%\end{appendices}
+
+%\clearpage

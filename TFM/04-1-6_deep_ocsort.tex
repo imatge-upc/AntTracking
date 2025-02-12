@@ -1,0 +1,59 @@
+
+{
+    Deep OC-SORT\cite{maggiolino2023deep} is a model published in 2023, 
+    it builds upon the \ac{OC-SORT} model with the incorporation of an appearance model. 
+    Although it also includes a feature for camera motion compensation (CMC), 
+    this particular functionality is not within the scope of relevance for this project.
+}
+
+\paragraph{Appearance model}
+
+{
+    Similar to the Strong SORT model, Deep OC-SORT employs the \ac{BoT} model for extracting appearance embeddings ($e_{t}$) for each detection.
+    However, Deep OC-SORT uses a new tracking by detection oriented moving average as a track representation; 
+    it is a dynamic moving average influenced by the detection confidence ($s_{det}$), the detection acceptance threshold ($\sigma$), and a constant minimum weight of the previous memory ($\alpha_{f}$):
+}
+
+\begin{equation}
+    \label{eqn:dynamic exponential moving average}
+    \begin{split}
+        &e_{t} = \alpha_{t} \cdot e_{t-1} + (1 - \alpha_{t}) \cdot e^{new} \\[0.25cm]
+        with \;& \alpha_{t} = \alpha_{f} + (1 - \alpha_{f}) \cdot \left(1 - \frac{s_{det} - \sigma}{1 - \sigma}\right) \\[0.25cm]
+        \text{when } s_{det} = \sigma : \;& \alpha_{t} = 1 \rightarrow e_{t} = e_{t-1} \\[0.25cm]
+        \text{when } s_{det} = 1 : \;& \alpha_{t} = \alpha_{f} \rightarrow e_{t} = \alpha_{f} \cdot e_{t-1} + (1 - \alpha_{f}) \cdot e^{new}
+    \end{split}
+\end{equation}
+
+{
+    This dynamic appearance memory mitigates the impact from low quality frames (for example, a blurred object) and instances of occlusions during the tracked trajectory.
+}
+
+\paragraph{Associator}
+
+{
+    For the task of associating tracks with new detections, Deep OC-SORT employs a method involving cosine similarity. 
+    This method results in the creation of an appearance matrix ($A_{c}$). 
+}
+
+{
+    Like Deep SORT, this similarity is combined with the \ac{IoU} through a weighted sum to obtain the association cost matrix. 
+    What distinguishes Deep OC-SORT is its introduction of an individual appearance weight for each pair of tracks and detections. 
+    These weights are computed based on the discriminativeness\footnote{Discriminativeness: The authors of Deep OC-SORT use this word to refer to the quantification of discriminability.} of the appearance data.
+}
+
+{
+    In the context of Deep OC-SORT, the authors define the discriminativeness 
+    ($z_{diff}$) as the upper clipped difference of the highest and second highest score of each row or column (low scoring matches are irrelevant) of the appearance matrix ($A_{c}$).
+    The mean of row discriminativeness and column discriminativeness plus a base weight ($a_{w}$) is their adaptive appearance weight:
+}
+
+
+\begin{equation}
+    \label{eqn:adaptive appearance weight}
+    \begin{split}
+        &w(m, n) = a_{w} + \frac{z_{diff}^{track}(\mathbf{A_{c}}, m) + z_{diff}^{det}(\mathbf{A_{c}}, n)}{2} \\[0.25cm]
+        with \;& z_{diff}^{track}(A_{c}, m) = \min\left( \max_{i} \left( \mathbf{A_{c}}[m, i] \right) - \max_{j \neq i} \left( \mathbf{A_{c}}[m, j] \right), \epsilon \right) \\[0.25cm]
+        with \;& z_{diff}^{det}(A_{c}, n) = \min\left( \max_{i} \left( \mathbf{A_{c}}[i, n] \right)  - \max_{j \neq i} \left( \mathbf{A_{c}}[j, n] \right), \epsilon \right)
+    \end{split}
+\end{equation}
+

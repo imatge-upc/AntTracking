@@ -1,0 +1,148 @@
+
+{
+    Similar to the detection model, the first step was the development of a script that applies the appearance model. 
+    In this case, the script takes a MOT format file and its video.
+    It applies the appearance model on each line of the MOT file.
+    And the output is the input MOT file with each line extended with as many columns as appearance features returns the model.
+}
+
+{
+    For the appearance model, the choice of model was directly obtained from Deep OC-SORT (a model from 2023): the Bag of Tricks model\cite{Luo_2019_CVPR_Workshops}. 
+    The rationale behind this choice was twofold: 
+    first, given the limited availability of appearance data, there were modest expectations for its performance in the initial video. 
+    Second, Deep OC-SORT represents a state-of-the-art model, further justifying its selection.
+}
+
+{
+    The implementation of this model is the same from Deep OC-SORT, it is the model from the FastReID\cite{he2020fastreid} library which includes training scripts. 
+    In this case, a tuning of the FastReID source code was needed. The inference function was extracted from the Deep OC-SORT code and applied on the developed inference scripts.
+}
+
+\subsubsection{Bag of Tricks Training}
+
+{
+    Being a relatively simple model architecture (detailed in the state of the art section), 
+    the more relevant part of this model is the training, more specifically, the training tricks defined on their paper and code:
+}
+
+\begin{itemize}
+    \item The triplet loss, a derivable function for maximizing interclass euclidean distance and minimizing intraclass euclidean distance, is applied before the batch normalization layer.
+    \item The classification loss is still derivated from the output of the pooling layer.
+    \item The first 1000 iterations from a total of 18000 has the backbone freezed.
+    \item The first 2000 iterations are warm-up iterations and the learning rate increases.
+    \item From the iteration 2000 until the iteration 9000 the learning rate is constant.
+    \item From the iteration 9000 until the end, the learning rate decrease with a cosine decay.
+\end{itemize}
+
+{
+    The implementation used for training is the same of the paper, with the only difference in the data augmentation: the code was modified in order to allow the definition of rotation degrees and the use of rotation without any additional affine transformations. 
+    Most of the training options were reduced based on the paper.
+}
+
+{
+    The biggest ant appearance dataset that was used contained 186 identities, divided into 93 for training and 93 for validating. 
+    The validation set will leave a 20\% of the identities as unknown identities (these identities are true negatives). 
+    At the end, the train set has got 6730 images, the validation query set has got 489 images to assign in 5795 images. 
+}
+
+{
+    The model was not tested using the criteria from the training. 
+    Nevertheless, a custom set of tests, that will be explained in the following subsection, 
+    were performed on an unseen set of data manually annotated: a video fragment with 87 simultaneous identities which represent the worst case scenario.
+}
+
+\enlargethispage{1.5\baselineskip}
+
+\needspace{0.1\textheight}
+
+{
+    The following table summarize the data splits:
+}
+
+\begin{table}[H]
+    \centering
+    \caption[Appearance dataset size]{ \footnotesize Appearance dataset size.}
+    \label{tab:appearance splits}
+
+    \begin{tabular}{p{3cm}l rrr}
+        \toprule
+        \multicolumn{2}{c}{\textbf{Subset}} & \textbf{Identities} & \textbf{Images} & \textbf{Percentage} \\
+        \midrule
+        \midrule
+        \multicolumn{2}{l}{\textbf{Training}} & 93 & 6730 & 51.1\% \\
+        \multirow{2}{*}{\textbf{Validation}} & Test images & 93 & 5795 & 44.0\% \\
+        & Query identities & 74 & 489 & 3.7\% \\
+        \multicolumn{2}{l}{\textbf{Test}} & 87 & 150 & 1.2\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\vspace{1\baselineskip}
+
+{
+    Additionally, a small script to allow the use of \ac{WandB} to visualize the experiments as a whole and lunch automatic sweeps was written. 
+    The set of hyperparameter values that were allowed is defined in Table \ref{tab:appearance hyperparameters}.
+}
+
+\begin{table}[H]
+    \centering
+    \caption[Appearance Model hyperparameters]{ \footnotesize Appearance Model hyperparameters.}
+    \label{tab:appearance hyperparameters}
+
+    \begin{tabularx}{0.9\textwidth}{
+        @{\hspace{0.025\textwidth}}
+        >{\raggedright\arraybackslash}X
+        >{\raggedleft\arraybackslash}X
+        @{\hspace{0.025\textwidth}}
+    }
+        \toprule
+        \textbf{Hyperparameter Name} & \textbf{Values} \\
+        \midrule
+        \midrule
+        Augmentation mix (probability) & min=0, max=1\\
+        Brightness (maximum deviation) & min=0, max=2\\
+        Contrast (maximum deviation) & min=0, max=2\\
+        Hue (maximum deviation) & min=0, max=0.5\\
+        Saturation (maximum deviation) & min=0, max=2\\
+        Flips 50\% enabled & \{True, False\}\\
+        Rotation (maximum degrees) & min=60, max=100\\
+        \midrule
+        Batch size & 8192 \\
+        Optimizer & \{SGD, AdaM\} \\
+        Initial learning rate & min=0.00001, max=0.005 \\
+        Momentum & min=0.9, max=0.95 \\
+        \midrule
+        Maximum epochs & 1440 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\vspace{1\baselineskip}
+
+{
+    To adjust the color mean and standard deviation, a script to analyze the pixels of a whole video was made.
+}
+
+{
+    Finally, the unoriented and the oriented versions of the same dataset trained were trained. The best models independently of the dataset were used to perform a test of viability.
+}
+
+\needspace{0.1\textheight}
+
+\subsubsection{Appearance Tests}
+
+{
+    As the training of the appearance features was unconvincing, in order to analyze the discriminability of appearance, a set of tests were designed.
+}
+
+{
+    The first test consists in the comparison of ants with themselves rotated using different rotation angles and plotting the distance with respect the angular rotation, the goal of this test is the study of the invariance over rotation that a well trained appearance model should have.
+}
+
+{
+    The second test is a comparison of ants with other ants rotated, this also checks the invariance over rotation but from the error point of view.
+}
+
+{
+    The third test is the splitting of all tracks within a ground truth into tracklets every time two or more ants are near; afterwards, the mean appearance of the tracklets, the limit appearance near a split point and the re-joining capabilities were observed through a set of correct versus incorrect appearance distance histograms.
+}
