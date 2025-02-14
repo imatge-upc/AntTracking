@@ -85,6 +85,6 @@ if __name__ == "__main__":
     overlap = float(args["--overlap"])
     confidence_threshold = float(args["--confidence_threshold"])
     
-    os.makedirs(os.path.dirname(output), exist_ok=True)
+    os.makedirs(os.path.dirname(output) or ".", exist_ok=True)
     
     main(video_source, model_path, output, queue_size=queue_size, batch_size=batch_size, slice_size=slice_size, overlap=overlap, confidence_threshold=confidence_threshold)
