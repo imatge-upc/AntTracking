@@ -1,4 +1,5 @@
 
+import cv2
 from docopt import docopt
 import numpy as np
 import os
@@ -19,16 +20,35 @@ def extract_obboxes(sliced_results, initial_frame):
     frame_index = initial_frame
     
     for result in sliced_results:
-        xywhr = np.array([[det.bbox.x, det.bbox.y, det.bbox.width, det.bbox.height, det.bbox.angle] 
-                          for det in result.object_prediction_list])
-        confidences = np.array([[det.score.value] for det in result.object_prediction_list])
-        xywhr[:, -1] = np.rad2deg(xywhr[:, -1])  # Convert radians to degrees
-        
-        obboxes = np.concatenate((xywhr, confidences), axis=1)
-        processed_results.append((frame_index, obboxes))
+        obboxes = []
+
+        for det in result.object_prediction_list:
+            if det.mask is not None:
+                segmentation = np.array(det.mask.segmentation).reshape(-1, 1, 2)  # Ensure shape (N,1,2)
+
+                rect = cv2.minAreaRect(segmentation)
+                (cx, cy), (w, h), angle = rect
+                
+                if w < h:
+                    w, h = h, w
+                    angle += 90
+            else:
+                bbox = det.bbox
+                cx = (bbox.minx + bbox.maxx) / 2
+                cy = (bbox.miny + bbox.maxy) / 2
+                w = bbox.maxx - bbox.minx
+                h = bbox.maxy - bbox.miny
+                angle = 0
+
+            angle = np.rad2deg(angle) if isinstance(angle, float) else angle
+            confidence = det.score.value            
+            obboxes.append([cx, cy, w, h, angle, confidence])
+
+        processed_results.append((frame_index, np.array(obboxes)))
         frame_index += 1
-    
+
     return processed_results, frame_index
+
 
 def main(video_source, model_path, output, queue_size=8, batch_size=4, min_batch_size=1, initial_frame=0, num_frames=-1, slice_size=640, overlap=0.2, confidence_threshold=0.3):
 
