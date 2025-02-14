@@ -37,6 +37,7 @@ torchaudio >= 2.0.1+cpu
 torchvision >= 0.15.1+cpu
 ultralytics >= 8.0.116
 wandb >= 0.15.4
+lsnms > 0.3.1
 
 ###### Requirments that may fail ######
 lap >= 0.4.0 # if lap does not work, try lapx
