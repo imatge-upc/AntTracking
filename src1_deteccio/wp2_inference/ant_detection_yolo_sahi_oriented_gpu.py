@@ -22,6 +22,9 @@ def extract_obboxes(sliced_results, initial_frame):
     for result in sliced_results:
         obboxes = []
 
+        slice_offset_x = result.image_bbox.minx
+        slice_offset_y = result.image_bbox.miny
+
         for det in result.object_prediction_list:
             if det.mask is not None:
                 obb_candidates = []
@@ -63,7 +66,7 @@ def extract_obboxes(sliced_results, initial_frame):
 
             angle = np.rad2deg(angle) if isinstance(angle, float) else angle
             confidence = det.score.value            
-            obboxes.append([cx, cy, w, h, angle, confidence])
+            obboxes.append([cx + slice_offset_x, cy + slice_offset_y, w, h, angle, confidence])
 
         processed_results.append((frame_index, np.array(obboxes)))
         frame_index += 1
@@ -92,8 +95,9 @@ def main(video_source, model_path, output, queue_size=8, batch_size=4, min_batch
                 slice_width=slice_size,
                 overlap_height_ratio=overlap,
                 overlap_width_ratio=overlap,
-                postprocess_type=None,
-                verbose=False
+                postprocess_type="NMS", # ['GREEDYNMM', 'NMM', 'NMS', 'LSNMS']
+                verbose=False,
+                perform_standard_pred=False,
             ) for image in batch
         ]
         return results
