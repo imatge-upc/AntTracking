@@ -45,12 +45,21 @@ def extract_obboxes(sliced_results, initial_frame):
                 else:
                     continue
             else:
-                bbox = det.bbox
-                cx = (bbox.minx + bbox.maxx) / 2
-                cy = (bbox.miny + bbox.maxy) / 2
-                w = bbox.maxx - bbox.minx
-                h = bbox.maxy - bbox.miny
-                angle = 0
+                if hasattr(det.bbox, "angle"):  # OBB Handling
+                    #cx = (det.bbox.minx + det.bbox.maxx) / 2
+                    #cy = (det.bbox.miny + det.bbox.maxy) / 2
+                    #w = det.bbox.maxx - det.bbox.minx
+                    #h = det.bbox.maxy - det.bbox.miny
+                    #angle = det.bbox.angle
+                    cx, cy, w, h, angle = det.bbox.cx, det.bbox.cy, det.bbox.width, det.bbox.height, det.bbox.angle
+                else:
+                    x_min, y_min, width, height = det.bbox.to_coco()
+                    cx, cy = x_min + width / 2, y_min + height / 2
+                    w, h = width, height
+                    angle = 0
+
+                confidence = det.score.value
+                obboxes.append([cx, cy, w, h, angle, confidence])
 
             angle = np.rad2deg(angle) if isinstance(angle, float) else angle
             confidence = det.score.value            
@@ -83,6 +92,7 @@ def main(video_source, model_path, output, queue_size=8, batch_size=4, min_batch
                 slice_width=slice_size,
                 overlap_height_ratio=overlap,
                 overlap_width_ratio=overlap,
+                postprocess_type=None,
                 verbose=False
             ) for image in batch
         ]
