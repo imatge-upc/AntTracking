@@ -83,6 +83,7 @@ def main(video_source, model_path, output, queue_size=8, batch_size=4, min_batch
                 slice_width=slice_size,
                 overlap_height_ratio=overlap,
                 overlap_width_ratio=overlap,
+                verbose=False
             ) for image in batch
         ]
         return results
