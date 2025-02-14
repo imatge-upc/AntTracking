@@ -67,11 +67,14 @@ class OBBox():
 def get_obbox(det):
     return det[(2, 3, 4, 5, 10)] # fr, id, x, y, w, h, conf, -1, -1, -1, angle
 
-def bigAreaOneClassNMS(detections, th_iou=0.5, max_distance=500, get_bbox_funct=None, bbox_class=None):
+def bigAreaOneClassNMS(detections, th_iou=0.5, max_distance=50, get_bbox_funct=None, bbox_class=None):
     if get_bbox_funct is None:
         get_bbox_funct = lambda det : det[2:6] # returns left, top, width, height
     bbox_class = bbox_class or BBox
     
+    if not detections and len(detections) < 2:
+        return detections
+
     cache_bbox = lru_cache(maxsize=len(detections))(bbox_class)
 
     sorted_detections = sorted(detections, key=lambda x : cache_bbox(*get_bbox_funct(x)).area, reverse=True)
