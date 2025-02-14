@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # read arguments
     input_video, detection_file, weights_path, imgsz, overlap, conf, stop_frame, initial_frame = parse_args(sys.argv)
 
-    os.makedirs(os.path.dirname(detection_file), exist_ok=True)
+    os.makedirs(os.path.dirname(detection_file) or '.', exist_ok=True)
 
     # Ensamble the Detector
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

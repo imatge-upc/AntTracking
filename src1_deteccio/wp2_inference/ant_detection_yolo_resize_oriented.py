@@ -1,6 +1,4 @@
 
-# NOTE: Easy version to begin and understand how it works, other version may be faster but I/O is more complex (I'm working towards loading from N and writting to N, 'cause my boss asked me)
-
 from docopt import docopt
 import numpy as np
 import os
@@ -74,6 +72,6 @@ if __name__ == "__main__":
     model_path = args['<model_path>'] # Training 22
     output = args["<output>"]
 
-    os.makedirs(os.path.dirname(output), exist_ok=True)
+    os.makedirs(os.path.dirname(output) or '.', exist_ok=True)
 
     main(video_source, model_path, output)

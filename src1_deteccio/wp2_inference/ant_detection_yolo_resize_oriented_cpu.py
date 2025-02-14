@@ -104,6 +104,6 @@ if __name__ == "__main__":
     max_frames = int(args["--max_preloaded"])
     batch_size = int(args["--batch_size"])
 
-    os.makedirs(os.path.dirname(output), exist_ok=True)
+    os.makedirs(os.path.dirname(output) or '.', exist_ok=True)
 
     main(video_source, model_path, output, max_frames, batch_size)
