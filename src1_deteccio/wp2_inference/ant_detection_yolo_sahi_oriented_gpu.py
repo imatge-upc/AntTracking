@@ -60,15 +60,15 @@ def main(video_source, model_path, output, queue_size=8, batch_size=4, min_batch
 
 DOCTEXT = """
 Usage:
-  ant_detection_yolo_sahi_oriented_gpu.py <video_source> <output> <model_path> [--queue_size=<int>] [--batch_size=<int>] [--slice_size=<int>] [--overlap=<float>] [--confidence_threshold=<float>]
+  ant_detection_yolo_sahi_oriented_gpu.py <video_source> <output> <model_path> [--queue_size=<int>] [--batch_size=<int>] [--imgsz=<int>] [--overlap=<float>] [--confidence_threshold=<float>]
   ant_detection_yolo_sahi_oriented_gpu.py -h | --help
 
 Options:
-  --queue_size=<int>             Max size of the frame queue [default: 40].
-  --batch_size=<int>             Number of frames per batch for YOLO inference [default: 8].
-  --slice_size=<int>             Size of slices for SAHI inference [default: 640].
-  --overlap=<float>              Overlap ratio for SAHI slicing [default: 0.2].
-  --confidence_threshold=<float> Confidence threshold for YOLO detection [default: 0.3].
+  --queue_size=<int>              Max size of the frame queue [default: 40].
+  --batch_size=<int>              Number of frames per batch for YOLO inference [default: 8].
+  --imgsz=<int>                   Size of slices for SAHI inference [default: 640].
+  --overlap=<float>               Overlap ratio for SAHI slicing [default: 0.2].
+  --confidence_threshold=<float>  Confidence threshold for YOLO detection [default: 0.3].
 """
 
 if __name__ == "__main__":
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     
     queue_size = int(args["--queue_size"])
     batch_size = int(args["--batch_size"])
-    slice_size = int(args["--slice_size"])
+    slice_size = int(args["--imgsz"])
     overlap = float(args["--overlap"])
     confidence_threshold = float(args["--confidence_threshold"])
     
