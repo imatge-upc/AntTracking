@@ -77,9 +77,9 @@ if __name__ == '__main__':
                 # TODO: Modify to batch more frames at once (now: 5h 39min 45s for 9014 frames -> x12 -> 2 days 19h 57min + tracking per 20 min 20 formigues)
                 # TODO: Solve dataset generation, min size ant after obbox crop
                 
-                seen = fr - initial_frame
-                if (seen == 1) or (seen == 5) or (seen == 10) or (seen == 25) or (seen == 50) or (seen % 100 == 0):
-                    print (f'Processing frame {fr} / {last_frame}', file=sys.stderr)
+                #seen = fr - initial_frame
+                #if (seen == 1) or (seen == 5) or (seen == 10) or (seen == 25) or (seen == 50) or (seen % 100 == 0):
+                #    print (f'Processing frame {fr} / {last_frame}', file=sys.stderr)
 
                 _, frame = capture.read()
                 if frame is None:
