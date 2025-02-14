@@ -54,7 +54,7 @@ if __name__ == '__main__':
         bad = (bboxes[:, 0] + bboxes[:, 2] / 2 > width) | (bboxes[:, 1] + bboxes[:, 3] / 2 > height)
         bboxes = bboxes[~bad, :]
 
-        nms_bboxes = bigAreaOneClassNMS(bboxes, th_iou=0.5, max_distance=500, get_bbox_funct=get_obbox, bbox_class=OBBox) # N, 5
+        nms_bboxes = bigAreaOneClassNMS(bboxes.tolist(), th_iou=0.5, max_distance=500, get_bbox_funct=get_obbox, bbox_class=OBBox) # N, 5
 
         return nms_bboxes # N, 5
 
@@ -81,8 +81,8 @@ if __name__ == '__main__':
                 # TODO: Solve dataset generation, min size ant after obbox crop
                 
                 seen = fr - initial_frame
-                if (seen == 1) or (seen == 5) or (seen == 10) or (seen == 25) or (seen == 50) or (seen % 100 == 0):
-                    print (f'Processing frame {fr} / {last_frame}', file=sys.stderr)
+                #if (seen == 1) or (seen == 5) or (seen == 10) or (seen == 25) or (seen == 50) or (seen % 100 == 0):
+                #    print (f'Processing frame {fr} / {last_frame}', file=sys.stderr)
 
                 _, frame = capture.read()
                 if frame is None:

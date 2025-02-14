@@ -72,7 +72,7 @@ def bigAreaOneClassNMS(detections, th_iou=0.5, max_distance=50, get_bbox_funct=N
         get_bbox_funct = lambda det : det[2:6] # returns left, top, width, height
     bbox_class = bbox_class or BBox
     
-    if not detections and len(detections) < 2:
+    if not detections or len(detections) < 2:
         return detections
 
     cache_bbox = lru_cache(maxsize=len(detections))(bbox_class)
