@@ -53,6 +53,7 @@ if __name__ == '__main__':
 
                 bboxes.append(torch.cat((xywhr, score), dim=1)) # B, N', 5
             elif result.masks is not None:
+                b_bboxes = []
 
                 masks = result.masks.cpu().xy
                 scores = result.boxes.conf.cpu()
@@ -67,13 +68,16 @@ if __name__ == '__main__':
 
                     bad = ((cx - w / 2 <= 0) | (cy - h / 2 <= 0) | (cx + w / 2 >= imgsz) | (cy + h / 2 >= imgsz))
                     if not bad:
-                        bboxes.append([cx + offset[1], cy + offset[0], w, h, angle, score])
+                        b_bboxes.append(torch.as_tensor([cx + offset[1], cy + offset[0], w, h, angle, score]))
+                
+                if b_bboxes:
+                    bboxes.append(torch.cat(bboxes, dim=0))  # N, 5
 
         if bboxes:
             bboxes = torch.cat(bboxes, dim=0)  # N, 5
         else:
             bboxes = torch.empty((0, 5))
-            
+
         bad = (bboxes[:, 0] + bboxes[:, 2] / 2 > width) | (bboxes[:, 1] + bboxes[:, 3] / 2 > height)
         bboxes = bboxes[~bad, :]
 
