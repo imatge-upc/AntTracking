@@ -68,10 +68,10 @@ if __name__ == '__main__':
 
                     bad = ((cx - w / 2 <= 0) | (cy - h / 2 <= 0) | (cx + w / 2 >= imgsz) | (cy + h / 2 >= imgsz))
                     if not bad:
-                        b_bboxes.append(torch.as_tensor([cx + offset[1], cy + offset[0], w, h, angle, score]))
-                
+                        b_bboxes.append(torch.as_tensor([cx + offset[1], cy + offset[0], w, h, angle, score]).reshape(-1, 6))
+
                 if b_bboxes:
-                    bboxes.append(torch.cat(bboxes, dim=0))  # N, 5
+                    bboxes.append(torch.cat(b_bboxes, dim=0))  # B, N', 5
 
         if bboxes:
             bboxes = torch.cat(bboxes, dim=0)  # N, 5
