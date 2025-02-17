@@ -1,12 +1,13 @@
 
 import cv2
+import numpy as np
 import os
 import sys
 import torch
 from tqdm import tqdm
 from ultralytics import YOLO
 
-from ceab_ants.detection.utils.nms import bigAreaOneClassNMS, OBBox
+from ceab_ants.detection.utils.nms import bigAreaOneClassNMS, bigAreaOneClassMaskedNMS, OBBox
 from ceab_ants.detection.utils.sliding_windows import sliceFrame
 from ceab_ants.io.video_contextmanager import VideoCapture
 
@@ -34,6 +35,13 @@ if __name__ == '__main__':
         rgb_img = img[..., ::-1] if len(img.shape) == 3 else img
         crops, offsets = sliceFrame(rgb_img, imgsz, overlap, batch=True)
 
+        overlap_mask = np.zeros((height, width), dtype=bool)
+        stride_h, stride_w = (imgsz * (1 - overlap)).astype(int)
+        for y_offset in range(0, height - imgsz, stride_h):
+            overlap_mask[y_offset + imgsz - stride_h:y_offset + imgsz, :] = True
+        for x_offset in range(0, width - imgsz, stride_w):
+            overlap_mask[:, x_offset + imgsz - stride_w:x_offset + imgsz] = True
+
         results = detection_model(crops, imgsz=imgsz, conf=conf, verbose=False)
 
         bboxes = []
@@ -54,7 +62,8 @@ if __name__ == '__main__':
         bad = (bboxes[:, 0] + bboxes[:, 2] / 2 > width) | (bboxes[:, 1] + bboxes[:, 3] / 2 > height)
         bboxes = bboxes[~bad, :]
 
-        nms_bboxes = bigAreaOneClassNMS(bboxes.tolist(), th_iou=0.5, max_distance=500, get_bbox_funct=get_obbox, bbox_class=OBBox) # N, 5
+        #nms_bboxes = bigAreaOneClassNMS(bboxes.tolist(), th_iou=0.5, max_distance=500, get_bbox_funct=get_obbox, bbox_class=OBBox) # N, 5
+        nms_bboxes = bigAreaOneClassMaskedNMS(bboxes.tolist(), overlap_mask, th_iou=0.5, max_distance=500, get_bbox_funct=get_obbox, bbox_class=OBBox)
 
         return nms_bboxes # N, 5
 

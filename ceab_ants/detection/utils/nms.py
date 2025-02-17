@@ -3,6 +3,7 @@ from functools import lru_cache
 import numpy as np
 from shapely.geometry import Polygon
 from shapely.affinity import rotate, translate
+from skimage.draw import polygon as sk_polygon
 
 
 class BBox():
@@ -37,6 +38,11 @@ class BBox():
     def iou(self, other):
         intersection = self.intersection(other).area
         return intersection / (self.area + other.area - intersection) # self.intersection(other).area / self.union_area(other)
+    
+    def in_mask(self, mask):
+        if self.left < 0 or self.right > mask.shape[1] - 1 or self.top < 0 or self.bottom > mask.shape[0] - 1:
+            return True
+        return np.any(mask[int(self.top):int(self.bottom) + 1, int(self.left):int(self.right) + 1])
 
 class OBBox():
 
@@ -62,7 +68,14 @@ class OBBox():
     def iou(self, other):
         intersection = self.intersection(other).area
         return intersection / (self.area + other.area - intersection) # self.intersection(other).area / self.union_area(other)
-
+    
+    def in_mask(self, mask):
+        coords = np.array(self.obbox.exterior.coords)
+        rows, cols = coords[:, 1].astype(int), coords[:, 0].astype(int)
+        if np.any(rows < 0) or np.any(cols < 0) or np.any(rows >= mask.shape[0]) or np.any(cols >= mask.shape[1]):
+            return True
+        rr, cc = sk_polygon(rows, cols, shape=mask.shape)
+        return np.any(mask[rr, cc])
 
 def get_obbox(det):
     return det[(2, 3, 4, 5, 10)] # fr, id, x, y, w, h, conf, -1, -1, -1, angle
@@ -72,9 +85,6 @@ def bigAreaOneClassNMS(detections, th_iou=0.5, max_distance=50, get_bbox_funct=N
         get_bbox_funct = lambda det : det[2:6] # returns left, top, width, height
     bbox_class = bbox_class or BBox
     
-    if not detections or len(detections) < 2:
-        return detections
-
     cache_bbox = lru_cache(maxsize=len(detections))(bbox_class)
 
     sorted_detections = sorted(detections, key=lambda x : cache_bbox(*get_bbox_funct(x)).area, reverse=True)
@@ -95,3 +105,24 @@ def bigAreaOneClassNMS(detections, th_iou=0.5, max_distance=50, get_bbox_funct=N
                 nms_remove.append(i + 1 + j) # It is a smaller neighbour
                 
     return nms_detections
+
+def bigAreaOneClassMaskedNMS(detections, mask, th_iou=0.5, max_distance=50, get_bbox_funct=None, bbox_class=None):
+    if get_bbox_funct is None:
+        get_bbox_funct = lambda det: det[2:6]  # Default to BBox: left, top, width, height
+    bbox_class = bbox_class or BBox
+
+    cache_bbox = lru_cache(maxsize=len(detections))(bbox_class)
+
+    filtered_detections = []
+    skipped_detections = []
+
+    for det in detections:
+        bbox = cache_bbox(*get_bbox_funct(det))
+        if bbox.in_mask(mask):
+            filtered_detections.append(det)
+        else:
+            skipped_detections.append(det)
+
+    processed_nms = bigAreaOneClassNMS(filtered_detections, th_iou, max_distance, get_bbox_funct, bbox_class)
+
+    return processed_nms + skipped_detections

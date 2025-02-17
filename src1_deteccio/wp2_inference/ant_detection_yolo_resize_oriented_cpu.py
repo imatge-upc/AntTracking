@@ -16,6 +16,7 @@ TQDM_INTERVAL = 10 # iterations
 def preprocess_frames(frame, input_shape):
     # Ultralytics authomatically reshape input, openVINO needs the input preprocessed
 
+    # TODO: pad into square before
     resized_frame = cv2.resize(frame, (input_shape[0], input_shape[1]))  # (W, H)
     normalized_frame = resized_frame / 255.0  # Normalize to [0, 1]
     processed_frame = np.transpose(normalized_frame, (2, 0, 1)).astype(np.float32)  # (C, H, W)
