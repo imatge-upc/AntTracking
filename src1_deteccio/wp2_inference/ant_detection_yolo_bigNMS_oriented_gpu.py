@@ -1,5 +1,6 @@
 
 import cv2
+from functools import lru_cache
 import numpy as np
 import os
 import sys
@@ -15,6 +16,16 @@ from docopts.help_ant_detection_yolo_bigNMS import parse_args
 
 
 # TODO: adapt to process_video
+
+@lru_cache(maxsize=1)
+def compute_overlap_mask(height, width, imgsz, overlap):
+    overlap_mask = np.zeros((height, width), dtype=bool)
+    stride_h, stride_w = (imgsz * (1 - overlap)).astype(int)
+    for y_offset in range(0, height - imgsz, stride_h):
+        overlap_mask[y_offset + imgsz - stride_h:y_offset + imgsz, :] = True
+    for x_offset in range(0, width - imgsz, stride_w):
+        overlap_mask[:, x_offset + imgsz - stride_w:x_offset + imgsz] = True
+    return overlap_mask
 
 def get_obbox(det):
     return det[:-1] # x, y, w, h, a, s
@@ -35,12 +46,7 @@ if __name__ == '__main__':
         rgb_img = img[..., ::-1] if len(img.shape) == 3 else img
         crops, offsets = sliceFrame(rgb_img, imgsz, overlap, batch=True)
 
-        overlap_mask = np.zeros((height, width), dtype=bool)
-        stride_h, stride_w = (imgsz * (1 - overlap)).astype(int)
-        for y_offset in range(0, height - imgsz, stride_h):
-            overlap_mask[y_offset + imgsz - stride_h:y_offset + imgsz, :] = True
-        for x_offset in range(0, width - imgsz, stride_w):
-            overlap_mask[:, x_offset + imgsz - stride_w:x_offset + imgsz] = True
+        overlap_mask = compute_overlap_mask(height, width, imgsz, overlap)
 
         results = detection_model(crops, imgsz=imgsz, conf=conf, verbose=False)
 
