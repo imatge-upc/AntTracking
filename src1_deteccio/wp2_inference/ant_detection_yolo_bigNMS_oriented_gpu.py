@@ -20,11 +20,11 @@ from docopts.help_ant_detection_yolo_bigNMS import parse_args
 @lru_cache(maxsize=1)
 def compute_overlap_mask(height, width, imgsz, overlap):
     overlap_mask = np.zeros((height, width), dtype=bool)
-    stride_h, stride_w = (imgsz * (1 - overlap)).astype(int)
-    for y_offset in range(0, height - imgsz, stride_h):
-        overlap_mask[y_offset + imgsz - stride_h:y_offset + imgsz, :] = True
-    for x_offset in range(0, width - imgsz, stride_w):
-        overlap_mask[:, x_offset + imgsz - stride_w:x_offset + imgsz] = True
+    stride = int(imgsz * (1 - overlap))
+    for y_offset in range(0, height - imgsz, stride):
+        overlap_mask[y_offset + imgsz - stride:y_offset + imgsz, :] = True
+    for x_offset in range(0, width - imgsz, stride):
+        overlap_mask[:, x_offset + imgsz - stride:x_offset + imgsz] = True
     return overlap_mask
 
 def get_obbox(det):
