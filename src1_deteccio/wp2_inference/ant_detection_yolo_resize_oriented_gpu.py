@@ -1,4 +1,5 @@
 
+import cv2
 from docopt import docopt
 import numpy as np
 import os
@@ -19,11 +20,41 @@ def extract_obboxes(yolo_results, initial_frame):
     frame_index = initial_frame
     
     for result in yolo_results:
-        xywhr = result.obb.xywhr.cpu().numpy().reshape(-1, 5)
-        confidences = result.obb.conf.cpu().numpy().reshape(-1, 1)
-        xywhr[:, -1] = np.rad2deg(xywhr[:, -1])
+        try:
+            xywhr = result.obb.xywhr.cpu().numpy().reshape(-1, 5)
+            confidences = result.obb.conf.cpu().numpy().reshape(-1, 1)
+            xywhr[:, -1] = np.rad2deg(xywhr[:, -1])
+            obboxes = np.concatenate((xywhr, confidences), axis=1)
+        except AttributeError:
+            obboxes = []
 
-        obboxes = np.concatenate((xywhr, confidences), axis=1)
+            for det in result.object_prediction_list:
+                if det.mask is not None:
+                    obb_candidates = []
+
+                    for polygon in det.mask.segmentation:
+                        if len(polygon) < 6:
+                            continue
+                        
+                        polygon_np = np.array(polygon, dtype=np.float32).reshape(-1, 2)
+                        rect = cv2.minAreaRect(polygon_np)
+                        (cx, cy), (w, h), angle = rect
+
+                        if w < h:
+                            w, h = h, w
+                            angle += 90  
+
+                    obb_candidates.append((cx, cy, w, h, angle))
+
+                    if obb_candidates:
+                        cx, cy, w, h, angle = max(obb_candidates, key=lambda x: x[2] * x[3])
+                    else:
+                        continue
+                
+                confidence = det.score.value            
+                obboxes.append([cx, cy, w, h, angle, confidence])
+
+        
         processed_results.append((frame_index, obboxes))
 
         frame_index += 1
