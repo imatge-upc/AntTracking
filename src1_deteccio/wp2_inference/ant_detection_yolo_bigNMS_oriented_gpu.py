@@ -48,23 +48,50 @@ if __name__ == '__main__':
 
         overlap_mask = compute_overlap_mask(height, width, imgsz, overlap)
 
-        results = detection_model(crops, imgsz=imgsz, conf=conf, verbose=False)
+        with torch.no_grad():
+            results = detection_model(crops, imgsz=imgsz, conf=conf, verbose=False)
+            results = [result.cpu() for result in results]
 
         bboxes = []
         for result, offset in zip(results, offsets):
-            xywhr = result.obb.xywhr.cpu().reshape(-1, 5) # N', 5
-            score = result.obb.conf.cpu().reshape(-1, 1) # N', 1
-            xywhr[:, -1] = torch.rad2deg(xywhr[:, -1])
+            if result.obb is not None:
+                xywhr = result.obb.xywhr.cpu().reshape(-1, 5) # N', 5
+                score = result.obb.conf.cpu().reshape(-1, 1) # N', 1
+                xywhr[:, -1] = torch.rad2deg(xywhr[:, -1])
 
-            bad = (xywhr[:, 0] - xywhr[:, 2] / 2 <= 0) | (xywhr[:, 1] - xywhr[:, 3] / 2 <= 0) | (xywhr[:, 0] + xywhr[:, 2] / 2 >= imgsz) | (xywhr[:, 1] + xywhr[:, 3] / 2 >= imgsz) 
-            xywhr, score = xywhr[~bad, :], score[~bad, :]
+                bad = (xywhr[:, 0] - xywhr[:, 2] / 2 <= 0) | (xywhr[:, 1] - xywhr[:, 3] / 2 <= 0) | (xywhr[:, 0] + xywhr[:, 2] / 2 >= imgsz) | (xywhr[:, 1] + xywhr[:, 3] / 2 >= imgsz) 
+                xywhr, score = xywhr[~bad, :], score[~bad, :]
 
-            xywhr[:, 0] = xywhr[:, 0] + offset[1]
-            xywhr[:, 1] = xywhr[:, 1] + offset[0]
+                xywhr[:, 0] = xywhr[:, 0] + offset[1]
+                xywhr[:, 1] = xywhr[:, 1] + offset[0]
 
-            bboxes.append(torch.cat((xywhr, score), dim=1)) # B, N', 5
+                bboxes.append(torch.cat((xywhr, score), dim=1)) # B, N', 5
+            elif result.masks is not None:
+                b_bboxes = []
 
-        bboxes = torch.cat(bboxes, dim=0) # N, 5
+                masks = result.masks.cpu().xy
+                scores = result.boxes.conf.cpu()
+                for polygon, score in zip(masks, scores.numpy()):
+                    polygon_np = np.array(polygon, dtype=np.float32).reshape(-1, 2)
+                    rect = cv2.minAreaRect(polygon_np)
+                    (cx, cy), (w, h), angle = rect
+
+                    if w < h:
+                        w, h = h, w
+                        angle += 90
+
+                    bad = ((cx - w / 2 <= 0) | (cy - h / 2 <= 0) | (cx + w / 2 >= imgsz) | (cy + h / 2 >= imgsz))
+                    if not bad:
+                        b_bboxes.append(torch.as_tensor([cx + offset[1], cy + offset[0], w, h, angle, score]).reshape(-1, 6))
+
+                if b_bboxes:
+                    bboxes.append(torch.cat(b_bboxes, dim=0))  # B, N', 5
+
+        if bboxes:
+            bboxes = torch.cat(bboxes, dim=0)  # N, 5
+        else:
+            bboxes = torch.empty((0, 5))
+            
         bad = (bboxes[:, 0] + bboxes[:, 2] / 2 > width) | (bboxes[:, 1] + bboxes[:, 3] / 2 > height)
         bboxes = bboxes[~bad, :]
 
