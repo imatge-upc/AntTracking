@@ -20,29 +20,30 @@ def extract_obboxes(yolo_results, initial_frame):
     frame_index = initial_frame
     
     for result in yolo_results:
-        try:
+        if result.obb is not None:
             xywhr = result.obb.xywhr.cpu().numpy().reshape(-1, 5)
             confidences = result.obb.conf.cpu().numpy().reshape(-1, 1)
             xywhr[:, -1] = np.rad2deg(xywhr[:, -1])
             obboxes = np.concatenate((xywhr, confidences), axis=1)
-        except AttributeError:
+        elif result.masks is not None:
             obboxes = []
 
-            if result.masks is not None:
-                for polygon, score in zip(result.masks.xy.cpu().numpy(), result.boxes.conf.cpu().numpy()):
-                    polygon_np = np.array(polygon, dtype=np.float32).reshape(-1, 2)
-                    rect = cv2.minAreaRect(polygon_np)
-                    (cx, cy), (w, h), angle = rect
+            masks = result.masks.cpu()
+            scores= result.boxes.conf.cpu()
+            for polygon, score in zip(masks.xy, scores.numpy()):
+                polygon_np = np.array(polygon.cpu(), dtype=np.float32).reshape(-1, 2)
+                rect = cv2.minAreaRect(polygon_np)
+                (cx, cy), (w, h), angle = rect
 
-                    if w < h:
-                        w, h = h, w
-                        angle += 90
+                if w < h:
+                    w, h = h, w
+                    angle += 90
 
-                    obboxes.append([cx, cy, w, h, angle, score])
+                obboxes.append([cx, cy, w, h, angle, score])
 
-        
+        torch.cuda.empty_cache()
+
         processed_results.append((frame_index, obboxes))
-
         frame_index += 1
 
     return processed_results, frame_index
@@ -60,7 +61,8 @@ def main(video_source, model_path, output, queue_size=8, batch_size=4, min_batch
         return model
 
     def apply_model(model, batch):
-        results = model.predict(batch, verbose=False)
+        with torch.no_grad():
+            results = model.predict(batch, verbose=False)
         return results
 
     process_video(video_source, output, build_model, apply_model, None, extract_obboxes, queue_size, batch_size, min_batch_size, initial_frame=initial_frame, num_frames=num_frames, timeout_get=QUEUE_GET_TIMEOUT, tqdm_interval=TQDM_INTERVAL)    
