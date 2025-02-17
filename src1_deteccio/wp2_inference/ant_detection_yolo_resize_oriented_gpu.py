@@ -29,7 +29,7 @@ def extract_obboxes(yolo_results, initial_frame):
             obboxes = []
 
             if result.masks is not None:
-                for polygon, score in zip(result.masks.xy, result.boxes.conf.cpu().numpy()):
+                for polygon, score in zip(result.masks.xy.cpu().numpy(), result.boxes.conf.cpu().numpy()):
                     polygon_np = np.array(polygon, dtype=np.float32).reshape(-1, 2)
                     rect = cv2.minAreaRect(polygon_np)
                     (cx, cy), (w, h), angle = rect
