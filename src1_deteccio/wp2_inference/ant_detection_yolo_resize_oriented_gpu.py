@@ -28,31 +28,17 @@ def extract_obboxes(yolo_results, initial_frame):
         except AttributeError:
             obboxes = []
 
-            for det in result.object_prediction_list:
-                if det.mask is not None:
-                    obb_candidates = []
+            if result.masks is not None:
+                for polygon, score in zip(result.masks.xy, result.boxes.conf.cpu().numpy()):
+                    polygon_np = np.array(polygon, dtype=np.float32).reshape(-1, 2)
+                    rect = cv2.minAreaRect(polygon_np)
+                    (cx, cy), (w, h), angle = rect
 
-                    for polygon in det.mask.segmentation:
-                        if len(polygon) < 6:
-                            continue
-                        
-                        polygon_np = np.array(polygon, dtype=np.float32).reshape(-1, 2)
-                        rect = cv2.minAreaRect(polygon_np)
-                        (cx, cy), (w, h), angle = rect
+                    if w < h:
+                        w, h = h, w
+                        angle += 90
 
-                        if w < h:
-                            w, h = h, w
-                            angle += 90  
-
-                    obb_candidates.append((cx, cy, w, h, angle))
-
-                    if obb_candidates:
-                        cx, cy, w, h, angle = max(obb_candidates, key=lambda x: x[2] * x[3])
-                    else:
-                        continue
-                
-                confidence = det.score.value            
-                obboxes.append([cx, cy, w, h, angle, confidence])
+                    obboxes.append([cx, cy, w, h, angle, score])
 
         
         processed_results.append((frame_index, obboxes))
