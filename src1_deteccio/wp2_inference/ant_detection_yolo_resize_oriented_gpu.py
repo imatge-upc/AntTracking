@@ -20,6 +20,8 @@ def extract_obboxes(yolo_results, initial_frame):
     frame_index = initial_frame
     
     for result in yolo_results:
+        obboxes = []
+
         if result.obb is not None:
             xywhr = result.obb.xywhr.cpu().numpy().reshape(-1, 5)
             confidences = result.obb.conf.cpu().numpy().reshape(-1, 1)
@@ -27,8 +29,6 @@ def extract_obboxes(yolo_results, initial_frame):
             obboxes = np.concatenate((xywhr, confidences), axis=1)
 
         elif result.masks is not None:
-            obboxes = []
-
             masks = result.masks.cpu().xy
             scores= result.boxes.conf.cpu()
             for polygon, score in zip(masks, scores.numpy()):
