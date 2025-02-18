@@ -37,6 +37,8 @@ class BBox():
 
     def iou(self, other):
         intersection = self.intersection(other).area
+        if (self.area + other.area - intersection) == 0:
+            return 0
         return intersection / (self.area + other.area - intersection) # self.intersection(other).area / self.union_area(other)
     
     def in_mask(self, mask):
@@ -67,6 +69,8 @@ class OBBox():
     
     def iou(self, other):
         intersection = self.intersection(other).area
+        if (self.area + other.area - intersection) == 0:
+            return 0
         return intersection / (self.area + other.area - intersection) # self.intersection(other).area / self.union_area(other)
     
     def in_mask(self, mask):
