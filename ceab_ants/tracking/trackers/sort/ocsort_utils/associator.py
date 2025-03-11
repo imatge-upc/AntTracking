@@ -94,6 +94,10 @@ class OCSORTAssociator():
     __call__ = associate
 
     def associate_high(self, high_detections, trackers, velocities, prev_obs):
+
+        if len(high_detections) == 0 or len(trackers) == 0:
+            return np.empty((0, 2), dtype=int)
+
         score_matrix = self.first_score_function(high_detections, trackers)
 
         high_matches = []
@@ -118,6 +122,10 @@ class OCSORTAssociator():
         return high_matches
     
     def associate_low(self, low_detections, unmatched_trackers):
+
+        if len(low_detections) == 0 or len(unmatched_trackers) == 0:
+            return np.empty((0, 2), dtype=int)
+
         score_matrix = self.second_score_function(low_detections, unmatched_trackers)
         score_matrix = np.array(score_matrix)
 

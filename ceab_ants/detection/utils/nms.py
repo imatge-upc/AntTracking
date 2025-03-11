@@ -82,7 +82,7 @@ class OBBox():
         return np.any(mask[rr, cc])
 
 def get_obbox(det):
-    return det[(2, 3, 4, 5, 10)] # fr, id, x, y, w, h, conf, -1, -1, -1, angle
+    return det[[2, 3, 4, 5, 10]] # fr, id, x, y, w, h, conf, -1, -1, -1, angle
 
 def bigAreaOneClassNMS(detections, th_iou=0.5, max_distance=50, get_bbox_funct=None, bbox_class=None):
     if get_bbox_funct is None:
@@ -130,3 +130,9 @@ def bigAreaOneClassMaskedNMS(detections, mask, th_iou=0.5, max_distance=50, get_
     processed_nms = bigAreaOneClassNMS(filtered_detections, th_iou, max_distance, get_bbox_funct, bbox_class)
 
     return processed_nms + skipped_detections
+
+
+def distanceNMS(detections, min_distance=35):
+    # From FRAN's model
+    # TODO: keep if the euclidean distance of the center with the kept centers is higher than min_distance
+    pass

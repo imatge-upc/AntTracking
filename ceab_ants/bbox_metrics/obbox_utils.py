@@ -181,6 +181,9 @@ def batch_intersection_obbox(obbox_test, obbox_gt):
     obbox_test_vertices = batch_obbox_vertices(obbox_test) # (N, 4, 2)
     obbox_gt_vertices = batch_obbox_vertices(obbox_gt) # (M, 4, 2)
 
+    if obbox_test_vertices.size == 0 or obbox_gt_vertices.size == 0:
+        return np.empty([obbox_test_vertices.shape[0], obbox_gt_vertices.shape[0], 8, 2])
+
     # Extract edges for each rectangle
     edges_test = batch_obbox_edges(obbox_test_vertices) # (N, 4, 2, 2)
     edges_gt = batch_obbox_edges(obbox_gt_vertices) # (M, 4, 2, 2)
