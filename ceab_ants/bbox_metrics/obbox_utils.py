@@ -79,7 +79,7 @@ def batch_obbox_edges_intesection(obbox_edges_test, obbox_edges_gt):
     valid = det != 0  # Valid intersections only where det != 0 
     # NOTE: If overlapped edges, the perpendicular edges will cross at the desired point
     t_u = np.full_like(B, -1) # (N, M, 4, 4, 2)
-    t_u[valid] = np.linalg.solve(A[valid], B[valid])  # Solve for t and u
+    t_u[valid] = np.linalg.solve(A[valid].reshape(-1, 2, 2), B[valid].reshape(-1, 2))  # Solve for t and u # TODO: some instalations fails here 'cause A[valid] colapses into -1
     t, u = t_u[..., 0], t_u[..., 1] # (N, M, 4, 4)
     
     # Filter valid t, u (0 <= t, u <= 1)

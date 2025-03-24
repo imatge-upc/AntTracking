@@ -83,7 +83,7 @@ def main(
             
             if online_targets is not None:
                 for t in online_targets:
-                    tlwh = [t[0] - t[2] / 2, t[1] - t[3] / 2, t[2], t[3], t[4]]
+                    tlwh = [t[0] + t[2] / 2, t[1] + t[3] / 2, t[2], t[3], t[4]]
                     tid = int(t[6])
                     conf = t[5]
                     tracks = f"{frame},{tid},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},{conf:.2f},-1,-1,-1,{tlwh[4]:.2f}"
