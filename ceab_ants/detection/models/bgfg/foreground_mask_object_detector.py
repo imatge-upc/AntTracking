@@ -3,8 +3,8 @@ import cv2
 import numpy as np
 
 
-def do_nothing(*args, **kargs):
-    return *args, kargs
+def do_nothing(in_):
+    return in_
 
 def build_bg_MOG2(var_thresh):
     backSub = cv2.createBackgroundSubtractorMOG2(varThreshold=var_thresh, detectShadows=False)
@@ -93,7 +93,7 @@ def build_detector(var_thresh, min_size, close_kernel=5, open_kernel=2):
     # Define the Background Subtractor function
     backSub = build_bg_MOG2(var_thresh)
     # Define the Noise Filter
-    filter_fg_func = MorphologyNoiseFilter(close_kernel=close_kernel, open_kernel=open_kernel)
+    filter_fg_func = None #MorphologyNoiseFilter(close_kernel=close_kernel, open_kernel=open_kernel)
     # Define the bboxes Finder
     bbox_extractor = lambda fgMask : oriented_bboxes_from_conected_components(fgMask, min_size=min_size)
     # Ensamble the Detector

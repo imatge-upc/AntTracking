@@ -17,7 +17,6 @@ from utils.frame_drawer import FrameDrawer
 HOMOGRAPHIES_PATH = "~/ANTS/src8_tracking/wp2_visualization/cameras_homographies.npy"
 CAM0_TO_MM_PATH = "~/ANTS/src8_tracking/wp2_visualization/cam0_to_mm.npy"
 MOTFILE = "~/results_video_pol/yolo_x264_stack_20240725_PINK-BLUE_WORKERS-SCOUTS_1/tracks/20240725_0941_fgbg_trk_world.txt"
-BASE_CAM = 0
 MAX_INPUT_BUFFER = 1
 VIDEO_RESOLUTION = (4000., 3000.) # (4000., 3000.) # (500., 375.)
 CAMERA_RESOLUTION = (4000., 3000.) # More like homography input resolution (which is camera full resolution)
@@ -52,7 +51,7 @@ if __name__ == "__main__":
 
     cam_homographies = np.load(HOMOGRAPHIES_PATH)
     real_world_homography = np.load(CAM0_TO_MM_PATH)
-    selected_homographies = cam_homographies[available_cams][:, BASE_CAM, ...].reshape(-1, 3, 3)
+    selected_homographies = cam_homographies[available_cams][:, ...].reshape(-1, 3, 3)
 
     drawer = FrameDrawer(selected_homographies, real_world_homography, motfile=MOTFILE, video_resolution=VIDEO_RESOLUTION, output_resolution=OUTPUT_RESOLUTION, camera_resolution=CAMERA_RESOLUTION)
     background_frames = load_background_images(background_images, drawer, VIDEO_RESOLUTION, len(available_cams))

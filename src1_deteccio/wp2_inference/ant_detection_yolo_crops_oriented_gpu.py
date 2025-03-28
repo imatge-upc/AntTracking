@@ -1,125 +1,32 @@
 
-import cv2
-import numpy as np
 import os
 import sys
-import torch
-from tqdm import tqdm
-from ultralytics import YOLO
 
-from ceab_ants.detection.utils.sliding_windows import sliceFrame
-from ceab_ants.io.video_contextmanager import VideoCapture
+from ceab_ants.detection.single_video_processor import SingleVideoProcessor
 
 from docopts.help_ant_detection_yolo_bigNMS import parse_args
+from input_utils.crop_frame_loader import CropFrameLoader
+from models.yolo_crop import YOLO_Crop
 
-
-# TODO: adapt to process_video
-
-def get_obbox(det):
-    return det[:-1] # x, y, w, h, a, s
 
 if __name__ == '__main__':
+
+    queue_size = 88
+    batch_size = 30
+    min_batch_size = 22
+    th_color = 50+1
+    tqdm_interval = 1
+
     # read arguments
     input_video, detection_file, weights_path, imgsz, overlap, conf, stop_frame, initial_frame = parse_args(sys.argv)
 
     os.makedirs(os.path.dirname(detection_file) or '.', exist_ok=True)
 
-    # Ensamble the Detector
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    detection_model = YOLO(weights_path)
-    detection_model.to(device)
+    loader = CropFrameLoader(imgsz=imgsz, overlap=overlap, th_color=th_color)
+    preprocess = loader.preprocess
 
-    def detector_model(img):
-        height, width = img.shape[:2]
-        rgb_img = img[..., ::-1] if len(img.shape) == 3 else img
-        crops, offsets = sliceFrame(rgb_img, imgsz, overlap, batch=True)
+    model = YOLO_Crop(weights_path, imgsz, conf=conf, verbose=True)
 
-        with torch.no_grad():
-            results = detection_model(crops, imgsz=imgsz, conf=conf, verbose=False)
-            results = [result.cpu() for result in results]
+    worker = SingleVideoProcessor(model.build_model, model.apply_model, preprocess, model.postprocess, queue_size, batch_size, min_batch_size, tqdm_interval=tqdm_interval)
 
-        bboxes = []
-        for result, offset in zip(results, offsets):
-            if result.obb is not None:
-                xywhr = result.obb.xywhr.cpu().reshape(-1, 5) # N', 5
-                score = result.obb.conf.cpu().reshape(-1, 1) # N', 1
-                xywhr[:, -1] = torch.rad2deg(xywhr[:, -1])
-
-                bad = (xywhr[:, 0] - xywhr[:, 2] / 2 <= 0) | (xywhr[:, 1] - xywhr[:, 3] / 2 <= 0) | (xywhr[:, 0] + xywhr[:, 2] / 2 >= imgsz) | (xywhr[:, 1] + xywhr[:, 3] / 2 >= imgsz) 
-                xywhr, score = xywhr[~bad, :], score[~bad, :]
-
-                xywhr[:, 0] = xywhr[:, 0] + offset[1]
-                xywhr[:, 1] = xywhr[:, 1] + offset[0]
-
-                bboxes.append(torch.cat((xywhr, score), dim=1)) # B, N', 5
-            elif result.masks is not None:
-                b_bboxes = []
-
-                masks = result.masks.cpu().xy
-                scores = result.boxes.conf.cpu()
-                for polygon, score in zip(masks, scores.numpy()):
-                    polygon_np = np.array(polygon, dtype=np.float32).reshape(-1, 2)
-                    rect = cv2.minAreaRect(polygon_np)
-                    (cx, cy), (w, h), angle = rect
-
-                    if w < h:
-                        w, h = h, w
-                        angle += 90
-
-                    bad = ((cx - w / 2 <= 0) | (cy - h / 2 <= 0) | (cx + w / 2 >= imgsz) | (cy + h / 2 >= imgsz))
-                    if not bad:
-                        b_bboxes.append(torch.as_tensor([cx + offset[1], cy + offset[0], w, h, angle, score]).reshape(-1, 6))
-
-                if b_bboxes:
-                    bboxes.append(torch.cat(b_bboxes, dim=0))  # B, N', 5
-
-        if bboxes:
-            bboxes = torch.cat(bboxes, dim=0)  # N, 5
-        else:
-            bboxes = torch.empty((0, 5))
-
-        bad = (bboxes[:, 0] + bboxes[:, 2] / 2 > width) | (bboxes[:, 1] + bboxes[:, 3] / 2 > height)
-        bboxes = bboxes[~bad, :]
-
-        return bboxes # N, 5
-
-    # Apply the model
-    fr = initial_frame
-    results = []
-    with VideoCapture(input_video) as capture:
-        capture.set(cv2.CAP_PROP_POS_FRAMES, initial_frame - 1)
-        max_frame = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        last_frame = max(max_frame, 0) if stop_frame <= 0 else min(max(max_frame, -max_frame), initial_frame + stop_frame)
-
-        mode = 'a' if initial_frame > 1 else 'w'
-        with open(detection_file, mode) as out_file: # open can use buffering= to set the buffer size
-            # For large files it is better to keep it open
-            
-            def generator(fr):
-                while stop_frame <= 0 or fr < initial_frame + stop_frame:
-                    yield
-
-            for _ in tqdm(generator(fr), mininterval=10, maxinterval=10):
-                fr = fr + 1
-
-                # TODO: Modify to batch more frames at once (now: 5h 39min 45s for 9014 frames -> x12 -> 2 days 19h 57min + tracking per 20 min 20 formigues)
-                # TODO: Solve dataset generation, min size ant after obbox crop
-                
-                #seen = fr - initial_frame
-                #if (seen == 1) or (seen == 5) or (seen == 10) or (seen == 25) or (seen == 50) or (seen % 100 == 0):
-                #    print (f'Processing frame {fr} / {last_frame}', file=sys.stderr)
-
-                _, frame = capture.read()
-                if frame is None:
-                    print (f'Frame {fr} is None', file=sys.stderr)
-                    break
-                    
-                obboxes = detector_model(frame)
-                if obboxes is None:
-                    continue # Training Background
-                
-                if len(obboxes) > 0:
-                    # bbox = (x, y, w, h, r, s) -> (fr, -1, x, y, w, h, s, -1, -1, -1, r)
-                    MOTDet_line = lambda fr, obbox : f'{fr:.0f},-1,{obbox[0]:.5f},{obbox[1]:.5f},{obbox[2]:.5f},{obbox[3]:.5f},{obbox[5]:.5f},-1,-1,-1,{obbox[4]:.1f}'
-                    detection_text = '\n'.join([MOTDet_line(fr, bbox) for bbox in obboxes])
-                    print(detection_text, end='\n', file=out_file)
+    worker.process_video(input_video, detection_file, stop_frame - initial_frame, initial_frame)

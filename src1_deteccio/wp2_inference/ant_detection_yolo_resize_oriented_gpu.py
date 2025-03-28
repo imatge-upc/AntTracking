@@ -1,70 +1,13 @@
 
-import cv2
 from docopt import docopt
-import numpy as np
 import os
 import sys
-import torch
-from ultralytics import YOLO
 
-from ceab_ants.detection.process_video import process_video
+from ceab_ants.detection.single_video_processor import SingleVideoProcessor
 
+from input_utils.resize_loader import preprocess
+from models.yolo_resize import YOLO_Resize
 
-QUEUE_GET_TIMEOUT = 2 # seconds
-TQDM_INTERVAL = 10 # iterations
-
-
-def extract_obboxes(yolo_results, initial_frame):
-
-    processed_results = []
-    frame_index = initial_frame
-    
-    for result in yolo_results:
-        obboxes = []
-
-        if result.obb is not None:
-            xywhr = result.obb.xywhr.cpu().numpy().reshape(-1, 5)
-            confidences = result.obb.conf.cpu().numpy().reshape(-1, 1)
-            xywhr[:, -1] = np.rad2deg(xywhr[:, -1])
-            obboxes = np.concatenate((xywhr, confidences), axis=1)
-
-        elif result.masks is not None:
-            masks = result.masks.cpu().xy
-            scores= result.boxes.conf.cpu()
-            for polygon, score in zip(masks, scores.numpy()):
-                polygon_np = np.array(polygon, dtype=np.float32).reshape(-1, 2)
-                rect = cv2.minAreaRect(polygon_np)
-                (cx, cy), (w, h), angle = rect
-
-                if w < h:
-                    w, h = h, w
-                    angle += 90
-
-                obboxes.append([cx, cy, w, h, angle, score])
-
-        processed_results.append((frame_index, obboxes))
-        frame_index += 1
-
-    return processed_results, frame_index
-
-
-def main(video_source, model_path, output, queue_size=8, batch_size=4, min_batch_size=1, initial_frame=0, num_frames=-1):
-
-    def build_model():
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model = YOLO(model_path)
-        model.to(device)
-
-        print(f"model built on {device}")
-
-        return model
-
-    def apply_model(model, batch):
-        with torch.no_grad():
-            results = model.predict(batch, verbose=False)
-        return [result.cpu() for result in results]
-
-    process_video(video_source, output, build_model, apply_model, None, extract_obboxes, queue_size, batch_size, min_batch_size, initial_frame=initial_frame, num_frames=num_frames, timeout_get=QUEUE_GET_TIMEOUT, tqdm_interval=TQDM_INTERVAL)    
 
 
 DOCTEXT = """
@@ -80,6 +23,10 @@ Options:
 
 if __name__ == "__main__":
 
+    initial_frame = 0
+    conf = 0.3
+    tqdm_interval = 1
+
     args = docopt(DOCTEXT, argv=sys.argv[1:], help=True, version=None, options_first=False)
 
     video_source = args['<video_source>']
@@ -88,7 +35,12 @@ if __name__ == "__main__":
 
     queue_size = int(args["--queue_size"])
     batch_size = int(args["--batch_size"])
+    min_batch_size = batch_size
 
     os.makedirs(os.path.dirname(output) or '.', exist_ok=True)
 
-    main(video_source, model_path, output, queue_size=queue_size, batch_size=batch_size)
+    model = YOLO_Resize(model_path, conf=conf, verbose=True)
+
+    worker = SingleVideoProcessor(model.build_model, model.apply_model, preprocess, model.postprocess, queue_size, batch_size, min_batch_size, tqdm_interval=tqdm_interval)
+
+    worker.process_video(video_source, output, -1, initial_frame)

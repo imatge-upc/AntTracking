@@ -7,11 +7,33 @@ import matplotlib.colors as mcolors
 import random
 
 
-def get_obb(mot_line):
+def apply_homography(points, H):
+    points_h = np.concatenate([points, np.ones((points.shape[0], 1))], axis=1)
+    dst = points_h @ H.T
+    dst /= dst[:, 2:3]
+    return dst[:, :2]
+
+def clip_polygon(polygon, width, height):
+    from shapely.geometry import Polygon, box
+
+    poly = Polygon([tuple(pt[0]) for pt in polygon])
+    valid_area = box(0, 0, width - 1, height - 1)
+    clipped = poly.intersection(valid_area)
+
+    if clipped.is_empty:
+        return None
+
+    if clipped.geom_type == 'Polygon':
+        return np.array(clipped.exterior.coords, dtype=np.int32).reshape(-1, 1, 2)
+    elif clipped.geom_type == 'MultiPolygon':
+        max_poly = max(clipped.geoms, key=lambda p: p.area) # Shouldn't happen but it's safer to contemplate it
+        return np.array(max_poly.exterior.coords, dtype=np.int32).reshape(-1, 1, 2)
+
+def get_obb(mot_line, trk=True):
     mot_line = mot_line.flatten()
 
     x, y, width, height = mot_line[2:6]
-    x, y = x + width / 2, y + height / 2
+    #if trk : x, y = x + width / 2, y + height / 2
     angle = np.deg2rad(mot_line[10])
 
     cos_a, sin_a = np.cos(angle), np.sin(angle)
@@ -49,8 +71,8 @@ class TrackMemory():
 
         for track in mot_frame:
             track_id = int(track[1])
-            #center = (int(track[2]), int(track[3]))
-            center = (int(track[2] + track[4] / 2), int(track[3] + track[5] / 2))
+            center = (int(track[2]), int(track[3]))
+            center = (int(track[2] - track[4] / 2), int(track[3] - track[5] / 2))
 
             self.tracks[track_id].append(center)
 
@@ -88,7 +110,7 @@ class TrackMemory():
 
 class FrameDrawer():
 
-    def __init__(self, cam_homographies, real_world_homography, motfile=None, mot_real_world=True, video_resolution=None, camera_resolution=None, output_resolution=None, memory_size=1, colormap=None, obb_thickness=1, point_thickness=3, line_thickness=2, max_ids=None):
+    def __init__(self, cam_homographies, real_world_homography, motfile=None, mot_real_world=True, video_resolution=None, camera_resolution=None, output_resolution=None, memory_size=1, colormap=None, obb_thickness=1, point_thickness=8, line_thickness=2, max_ids=None):
         """
         At main, cam_homographies was loaded as a matrix of 12x12x3x3, the main know which cameras are useful and which camera is the base for real_world_homography, so the main filter them into a list of 3x3 homographies
         mot_real_world=True means the motfile already has applied real_world_homography, if False real_world_homography will be applied.
@@ -99,7 +121,7 @@ class FrameDrawer():
         self.output_resolution = output_resolution or (4000., 3000.)
         self.motfile = motfile
 
-        self.mot_homography, self.cam_homographies = self.prepare_homographies(cam_homographies, real_world_homography, mot_real_world, video_resolution, camera_resolution, self.output_resolution)
+        self.mot_homography, self.cam_homographies, self.coverage = self.prepare_homographies(cam_homographies, real_world_homography, mot_real_world, video_resolution, camera_resolution, self.output_resolution)
         self.processed_mot = self.process_mot(motfile) if motfile else None
 
         self.tracks = None
@@ -127,7 +149,8 @@ class FrameDrawer():
                 self.max_radius = np.max(np.sqrt(self.processed_mot[:, 4] ** 2 + self.processed_mot[:, 5] ** 2))
 
         self.obb_thickness = obb_thickness
-        self.point_thickness = point_thickness
+        self.point_thickness = point_thickness / len(self.cam_homographies)
+        if self.point_thickness < 1 : self.point_thickness = 3 # NOTE: When drawing multiple cams, big points in pixels are larger than the ants
         self.line_thickness = line_thickness
 
     def prepare_homographies(self, cam_homographies, real_world_homography, mot_real_world, video_resolution, camera_resolution, output_resolution):
@@ -166,8 +189,33 @@ class FrameDrawer():
         mot_homography = translation_matrix_2 @ resize_matrix @ translation_matrix_1 @ mot_homography
         for i in range(len(cam_homographies)):
             cam_homographies[i] = translation_matrix_2 @ resize_matrix @ translation_matrix_1 @ cam_homographies[i]
+
+        width, height = self.output_resolution
+        coverage = np.zeros((height, width), dtype=np.int32)
+
+        corners = np.array([
+            [0, 0],
+            [video_resolution[0] - 1, 0],
+            [video_resolution[0] - 1, video_resolution[1] - 1],
+            [0, video_resolution[1] - 1]
+        ])
+
+        for H in cam_homographies:
+            transformed_corners = apply_homography(corners, H)
+
+            polygon = transformed_corners.astype(np.int32)
+            polygon = polygon.reshape((-1, 1, 2))
+
+            clipped_polygon = clip_polygon(polygon, width, height)
+            if clipped_polygon is not None:
+                temp_mask = np.zeros((height, width), dtype=np.uint8)
+                cv2.fillPoly(temp_mask, [clipped_polygon], 1)
+                coverage += temp_mask
         
-        return mot_homography, cam_homographies
+        coverage[coverage == 0] = 1
+        coverage = np.repeat(coverage[..., np.newaxis], 3, axis=2)
+        
+        return mot_homography, cam_homographies, coverage
 
     def process_mot(self, motfile):
         detections = np.loadtxt(motfile, delimiter=',')
@@ -206,13 +254,16 @@ class FrameDrawer():
         # This happens before "draw" so draw already has all the data in good conditions for blending
         H = self.cam_homographies[cam_id].reshape(3, 3)
         transformed_frame = cv2.warpPerspective(frame, H, (int(self.output_resolution[0]), int(self.output_resolution[1])))
+        transformed_frame = (transformed_frame / self.coverage).astype(np.uint8)
         return transformed_frame
     
     def join_frames(self, frame_list):
         stitched_frame = frame_list[0].copy()
+
         for frame in frame_list[1:]:
-            mask = np.all(stitched_frame == 0, axis=2)
-            stitched_frame[mask] = frame[mask]
+            stitched_frame = cv2.addWeighted(stitched_frame, 1, frame, 1, 0)
+            #mask = np.all(stitched_frame == 0, axis=2)
+            #stitched_frame[mask] = frame[mask]
 
         return stitched_frame
 
@@ -221,8 +272,8 @@ class FrameDrawer():
         overlap_index = 1
         detection_positions = []
         for detection in mot_frame:
-            center = tuple(map(int, detection[2:4] + detection[4:6] / 2))
-            obb = get_obb(detection)
+            center = tuple(map(int, detection[2:4])) # + detection[4:6] / 2))
+            obb = get_obb(detection, trk=False)
 
             if len(detection_positions) == 0:
                 distances = np.inf
@@ -236,7 +287,7 @@ class FrameDrawer():
                 color_index = 0
             
             detection_positions.append(center)
-            detection_color = tuple(int(c) for c in self.colormap[color_index])
+            detection_color = tuple(int(c) for c in self.colormap[color_index % len(self.colormap)]) # In case user colormap and color_index > len(colormap)
             cv2.polylines(frame, [obb], isClosed=True, color=detection_color, thickness=self.obb_thickness)
             cv2.circle(frame, center, radius=self.point_thickness, color=detection_color, thickness=-1)
         
@@ -263,7 +314,7 @@ class FrameDrawer():
         return frame
 
     def draw(self, frame_list, fr):
-        frame_list = [frame for _, frame in frame_list]
+        #frame_list = [frame for _, frame in frame_list]
         frame = self.join_frames(frame_list)
 
         if self.processed_mot is not None:
